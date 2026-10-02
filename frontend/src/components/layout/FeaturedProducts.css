@@ -5,7 +5,7 @@
 }
 
 .featured-products-header {
-    display: grid;
+    display: contents;
 
     grid-template-columns: 1fr 2fr;
 

@@ -1,11 +1,11 @@
 .eyewear-section {
-    padding: 160px 0 180px;
-    background: var(--color-obsidian);
-    color: var(--color-ivory);
+    padding: 150px 0 180px;
+    background: var(--color-ivory);
+    color: var(--color-obsidian);
 }
 
 .eyewear-header {
-    display: grid;
+    display:contents;
     grid-template-columns: 1fr 2fr;
     gap: 80px;
 }
@@ -15,7 +15,8 @@
     font-weight: 600;
     letter-spacing: 0.16em;
     text-transform: uppercase;
-    opacity: 0.7;
+
+    color: var(--color-obsidian);
 }
 
 .eyewear-heading {
@@ -23,12 +24,12 @@
 }
 
 .eyewear-heading h2 {
-    font-size: clamp(58px, 7vw, 110px);
+    font-size: clamp(58px, 7vw, 108px);
     line-height: 0.88;
 }
 
 .eyewear-heading > p {
-    max-width: 470px;
+    max-width: 500px;
 
     margin-top: 42px;
 
@@ -40,30 +41,35 @@
 
 .eyewear-section .editorial-link {
     margin-top: 34px;
-    color: var(--color-ivory);
-    border-color: rgba(247, 245, 240, 0.7);
+
+    color: var(--color-obsidian);
+    border-color: var(--color-obsidian);
 }
 
-/* Feature */
+/* Featured product */
 
 .eyewear-feature {
     display: grid;
-    grid-template-columns: minmax(0, 1.6fr) minmax(260px, 0.65fr);
+    grid-template-columns: minmax(0, 1.7fr) minmax(260px, 0.65fr);
+
     gap: 70px;
     align-items: end;
 
-    margin-top: 110px;
+    margin-top: 90px;
 }
 
 .eyewear-feature-image {
-    height: 700px;
+    height: 680px;
+
     overflow: hidden;
+
     background: var(--color-stone);
 }
 
 .eyewear-feature-image img {
     width: 100%;
     height: 100%;
+
     object-fit: cover;
 
     transition:
@@ -74,8 +80,10 @@
     transform: scale(1.025);
 }
 
+/* Product information */
+
 .eyewear-feature-info {
-    padding-bottom: 12px;
+    padding-bottom: 8px;
 }
 
 .eyewear-product-number {
@@ -91,9 +99,10 @@
 
 .eyewear-feature-info h3 {
     font-family: var(--font-display);
-    font-size: clamp(48px, 5vw, 76px);
+    font-size: clamp(52px, 5vw, 78px);
     font-weight: 400;
-    line-height: 0.95;
+    line-height: 0.92;
+    letter-spacing: -0.03em;
 }
 
 .eyewear-product-description {
@@ -115,7 +124,7 @@
     margin-top: 34px;
     padding-bottom: 7px;
 
-    border-bottom: 1px solid rgba(247, 245, 240, 0.7);
+    border-bottom: 1px solid var(--color-obsidian);
 
     font-size: 10px;
     font-weight: 600;
@@ -144,7 +153,8 @@
     .eyewear-feature {
         grid-template-columns: 1.4fr 0.8fr;
         gap: 40px;
-        margin-top: 80px;
+
+        margin-top: 75px;
     }
 
     .eyewear-feature-image {
@@ -174,6 +184,7 @@
 
     .eyewear-feature {
         grid-template-columns: 1fr;
+
         gap: 35px;
         margin-top: 65px;
     }

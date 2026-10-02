@@ -4,14 +4,15 @@ function EyewearSection() {
     return (
         <section className="eyewear-section">
             <div className="container">
-                <div className="eyewear-header">
+
+                <div className="eyewear-intro">
                     <div>
                         <p className="eyewear-eyebrow">
                             02 — Eyewear
                         </p>
                     </div>
 
-                    <div className="eyewear-heading">
+                    <div className="eyewear-intro-copy">
                         <h2 className="display-text">
                             Designed to
                             <br />
@@ -34,32 +35,40 @@ function EyewearSection() {
                     </div>
                 </div>
 
-                <div className="eyewear-feature">
-                    <div className="eyewear-feature-image">
+                <div className="eyewear-grid">
+
+                    <a
+                        href="/eyewear"
+                        className="eyewear-image eyewear-image-large"
+                    >
                         <img
                             src="https://images.unsplash.com/photo-1511499767150-a48a237f0083?auto=format&fit=crop&w=1800&q=85"
-                            alt="HIMORA eyewear"
+                            alt="HIMORA eyewear collection"
                         />
-                    </div>
 
-                    <div className="eyewear-feature-info">
-                        <p className="eyewear-product-number">
-                            HIMORA / E-01
-                        </p>
+                        <div className="eyewear-image-label">
+                            <span>HIMORA / E-01</span>
+                            <span>Explore →</span>
+                        </div>
+                    </a>
 
-                        <h3>Altitude</h3>
+                    <a
+                        href="/eyewear"
+                        className="eyewear-image eyewear-image-small"
+                    >
+                        <img
+                            src="https://images.unsplash.com/photo-1574258495973-f010dfbb5371?auto=format&fit=crop&w=1200&q=85"
+                            alt="HIMORA sunglasses"
+                        />
 
-                        <p className="eyewear-product-description">
-                            A sculpted silhouette inspired by the
-                            strength and clarity of high-altitude
-                            landscapes.
-                        </p>
+                        <div className="eyewear-image-label">
+                            <span>HIMORA / E-02</span>
+                            <span>View →</span>
+                        </div>
+                    </a>
 
-                        <a href="/eyewear/altitude">
-                            View product <span>→</span>
-                        </a>
-                    </div>
                 </div>
+
             </div>
         </section>
     );

@@ -1,11 +1,11 @@
 .eyewear-section {
-    padding: 150px 0 180px;
+    padding: 0;
     background: var(--color-ivory);
     color: var(--color-obsidian);
 }
 
 .eyewear-intro {
-    display: grid;
+    display: contents;
     grid-template-columns: 1fr 2fr;
     gap: 80px;
 }

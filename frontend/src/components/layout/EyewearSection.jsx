@@ -1,5 +1,6 @@
 import "./EyewearSection.css";
-
+import sunglass1 from "../../assets/Sunglasses/sunglass1.png";
+import sunglass2 from "../../assets/Sunglasses/sunglass2.png";
 function EyewearSection() {
     return (
         <section className="eyewear-section">
@@ -42,7 +43,7 @@ function EyewearSection() {
                         className="eyewear-image eyewear-image-large"
                     >
                         <img
-                            src="https://images.unsplash.com/photo-1511499767150-a48a237f0083?auto=format&fit=crop&w=1800&q=85"
+                            src={sunglass1}
                             alt="HIMORA eyewear collection"
                         />
 
@@ -57,7 +58,7 @@ function EyewearSection() {
                         className="eyewear-image eyewear-image-small"
                     >
                         <img
-                            src="https://images.unsplash.com/photo-1574258495973-f010dfbb5371?auto=format&fit=crop&w=1200&q=85"
+                            src={sunglass2}
                             alt="HIMORA sunglasses"
                         />
 

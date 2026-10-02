@@ -4,9 +4,9 @@
 }
 
 .collection-intro {
-    display: grid;
+    display:contents;
     grid-template-columns: 1fr 2fr;
-    gap: 80px;
+    gap: 90px;
 }
 
 .collection-intro-copy {
@@ -59,7 +59,7 @@
     align-items: end;
     gap: 24px;
 
-    margin-top: 130px;
+    margin-top: 90px;
 }
 
 .collection-image {

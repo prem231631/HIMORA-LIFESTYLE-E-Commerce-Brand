@@ -1,22 +1,16 @@
 import Navbar from "./components/layout/Navbar";
 import Hero from "./components/layout/Hero";
+import NewCollection from "./components/layout/NewCollection";
 function App() {
     return (
         <>
             <Navbar />
-            <Hero/>
 
-            <main className="home-placeholder">
-                <p className="eyebrow">HIMORA LIFESTYLE</p>
-
-                <h1 className="display-text">
-                    Inspired by the Himalayas.
-                </h1>
-
-                <p>
-                    Designed for the modern world.
-                </p>
+            <main>
+              <Hero/>
+              <NewCollection />
             </main>
+            
         </>
     );
 }

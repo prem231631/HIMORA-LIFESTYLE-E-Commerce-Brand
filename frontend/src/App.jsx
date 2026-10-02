@@ -1,9 +1,10 @@
 import Navbar from "./components/layout/Navbar";
-
+import Hero from "./components/layout/Hero";
 function App() {
     return (
         <>
             <Navbar />
+            <Hero/>
 
             <main className="home-placeholder">
                 <p className="eyebrow">HIMORA LIFESTYLE</p>

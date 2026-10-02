@@ -1,0 +1,188 @@
+.eyewear-section {
+    padding: 160px 0 180px;
+    background: var(--color-obsidian);
+    color: var(--color-ivory);
+}
+
+.eyewear-header {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 80px;
+}
+
+.eyewear-eyebrow {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    opacity: 0.7;
+}
+
+.eyewear-heading {
+    max-width: 850px;
+}
+
+.eyewear-heading h2 {
+    font-size: clamp(58px, 7vw, 110px);
+    line-height: 0.88;
+}
+
+.eyewear-heading > p {
+    max-width: 470px;
+
+    margin-top: 42px;
+
+    font-size: 14px;
+    line-height: 1.8;
+
+    color: var(--color-taupe);
+}
+
+.eyewear-section .editorial-link {
+    margin-top: 34px;
+    color: var(--color-ivory);
+    border-color: rgba(247, 245, 240, 0.7);
+}
+
+/* Feature */
+
+.eyewear-feature {
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) minmax(260px, 0.65fr);
+    gap: 70px;
+    align-items: end;
+
+    margin-top: 110px;
+}
+
+.eyewear-feature-image {
+    height: 700px;
+    overflow: hidden;
+    background: var(--color-stone);
+}
+
+.eyewear-feature-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+
+    transition:
+        transform 900ms cubic-bezier(0.2, 0.65, 0.25, 1);
+}
+
+.eyewear-feature:hover .eyewear-feature-image img {
+    transform: scale(1.025);
+}
+
+.eyewear-feature-info {
+    padding-bottom: 12px;
+}
+
+.eyewear-product-number {
+    margin-bottom: 20px;
+
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+
+    color: var(--color-taupe);
+}
+
+.eyewear-feature-info h3 {
+    font-family: var(--font-display);
+    font-size: clamp(48px, 5vw, 76px);
+    font-weight: 400;
+    line-height: 0.95;
+}
+
+.eyewear-product-description {
+    max-width: 330px;
+
+    margin-top: 28px;
+
+    font-size: 13px;
+    line-height: 1.8;
+
+    color: var(--color-taupe);
+}
+
+.eyewear-feature-info > a {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+
+    margin-top: 34px;
+    padding-bottom: 7px;
+
+    border-bottom: 1px solid rgba(247, 245, 240, 0.7);
+
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+
+    transition: gap var(--transition-medium);
+}
+
+.eyewear-feature-info > a:hover {
+    gap: 20px;
+}
+
+/* Tablet */
+
+@media (max-width: 900px) {
+    .eyewear-section {
+        padding: 120px 0 140px;
+    }
+
+    .eyewear-header {
+        grid-template-columns: 1fr;
+        gap: 35px;
+    }
+
+    .eyewear-feature {
+        grid-template-columns: 1.4fr 0.8fr;
+        gap: 40px;
+        margin-top: 80px;
+    }
+
+    .eyewear-feature-image {
+        height: 580px;
+    }
+}
+
+/* Mobile */
+
+@media (max-width: 650px) {
+    .eyewear-section {
+        padding: 90px 0 110px;
+    }
+
+    .eyewear-header {
+        gap: 28px;
+    }
+
+    .eyewear-heading h2 {
+        font-size: clamp(54px, 15vw, 78px);
+    }
+
+    .eyewear-heading > p {
+        margin-top: 28px;
+        font-size: 13px;
+    }
+
+    .eyewear-feature {
+        grid-template-columns: 1fr;
+        gap: 35px;
+        margin-top: 65px;
+    }
+
+    .eyewear-feature-image {
+        height: 520px;
+    }
+
+    .eyewear-feature-info {
+        padding-bottom: 0;
+    }
+}

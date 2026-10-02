@@ -1,0 +1,26 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: himora_postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: himora_lifestyle
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+
+    ports:
+      - "5433:5432"
+
+    volumes:
+      - himora_postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d himora_lifestyle"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+
+volumes:
+  himora_postgres_data:

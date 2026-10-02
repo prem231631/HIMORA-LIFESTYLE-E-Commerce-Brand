@@ -1,4 +1,4 @@
-ximport "./Hero.css";
+import "./Hero.css";
 
 function Hero() {
     return (

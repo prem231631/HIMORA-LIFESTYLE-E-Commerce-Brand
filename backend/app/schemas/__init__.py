@@ -5,8 +5,10 @@ from app.schemas.category import (
 )
 
 from app.schemas.product import (
+    ProductCreate,
     ProductImageResponse,
     ProductResponse,
+    ProductUpdate,
 )
 
 __all__ = [
@@ -15,4 +17,6 @@ __all__ = [
     "CategoryUpdate",
     "ProductImageResponse",
     "ProductResponse",
+    "ProductCreate",
+    "ProductUpdate",
 ]

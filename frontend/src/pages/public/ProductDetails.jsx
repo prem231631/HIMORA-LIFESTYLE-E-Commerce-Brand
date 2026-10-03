@@ -25,10 +25,11 @@ function ProductDetails() {
                 setLoading(true);
                 setError("");
 
-                const [productData, variantData] = await Promise.all([
-                    getProduct(productId),
-                    getProductVariants(productId),
-                ]);
+                const productData = await getProduct(productId);
+                console.log("PRODUCT DATA:", productData);
+
+                const variantData = await getProductVariants(productData.id);
+                console.log("VARIANT DATA:", variantData);
 
                 setProduct(productData);
                 setVariants(variantData);

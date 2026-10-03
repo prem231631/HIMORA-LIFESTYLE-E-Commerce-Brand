@@ -23,9 +23,9 @@ export async function getFeaturedProducts() {
 }
 
 
-export async function getProduct(productId) {
+export async function getProduct(productSlug) {
     const response = await fetch(
-        `${API_BASE_URL}/api/products/${productId}`
+        `${API_BASE_URL}/api/products/${productSlug}`
     );
 
     return handleResponse(

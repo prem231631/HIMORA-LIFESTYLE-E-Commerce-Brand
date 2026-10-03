@@ -108,21 +108,21 @@ def get_featured_products(
     return db.scalars(statement).all()
 
 
-@router.get(
-    "/{product_id}",
-    response_model=ProductResponse,
-)
-def get_product(
-    product_id: int,
-    db: Session = Depends(get_db),
-):
-    product = db.scalar(
-        product_query().where(Product.id == product_id)
+@router.get("/{product_slug}", response_model=ProductResponse)
+def get_product(product_slug: str, db: Session = Depends(get_db)):
+    product = (
+        db.query(Product)
+        .options(
+            selectinload(Product.category),
+            selectinload(Product.images),
+        )
+        .filter(Product.slug == product_slug)
+        .first()
     )
 
     if not product:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=404,
             detail="Product not found.",
         )
 

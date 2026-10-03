@@ -6,17 +6,24 @@ from app.schemas.category import (
 
 from app.schemas.product import (
     ProductCreate,
-    ProductImageResponse,
     ProductResponse,
     ProductUpdate,
+)
+
+from app.schemas.product_image import (
+    ProductImageCreate,
+    ProductImageResponse,
+    ProductImageUpdate,
 )
 
 __all__ = [
     "CategoryCreate",
     "CategoryResponse",
     "CategoryUpdate",
-    "ProductImageResponse",
-    "ProductResponse",
     "ProductCreate",
+    "ProductResponse",
     "ProductUpdate",
+    "ProductImageCreate",
+    "ProductImageResponse",
+    "ProductImageUpdate",
 ]

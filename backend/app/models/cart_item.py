@@ -4,7 +4,11 @@ from sqlalchemy import DateTime, ForeignKey, Integer, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.session import Base
-from backend.app.models.product_variant import ProductVariant
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.models.product_variant import ProductVariant
 
 
 class CartItem(Base):

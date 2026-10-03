@@ -12,3 +12,7 @@ class InventoryResponse(BaseModel):
     reserved_quantity: int
     sold_quantity: int
     available_quantity: int
+
+
+class InventoryReservationRequest(BaseModel):
+    quantity: int = Field(gt=0)

@@ -1,10 +1,14 @@
 from datetime import datetime
 
 from sqlalchemy import Boolean, DateTime, String, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.session import Base
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.models.cart import Cart
 
 class User(Base):
     __tablename__ = "users"
@@ -53,4 +57,11 @@ class User(Base):
         DateTime,
         server_default=func.now(),
         nullable=False,
+    )
+
+    cart: Mapped["Cart | None"] = relationship(
+        "Cart",
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete-orphan",
     )

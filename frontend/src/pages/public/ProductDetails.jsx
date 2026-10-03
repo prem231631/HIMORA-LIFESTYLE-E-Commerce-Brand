@@ -26,10 +26,9 @@ function ProductDetails() {
                 setError("");
 
                 const productData = await getProduct(productId);
-                console.log("PRODUCT DATA:", productData);
-
+                
                 const variantData = await getProductVariants(productData.id);
-                console.log("VARIANT DATA:", variantData);
+                
 
                 setProduct(productData);
                 setVariants(variantData);

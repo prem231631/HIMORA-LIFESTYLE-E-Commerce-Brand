@@ -23,6 +23,11 @@ from app.schemas.product_variant import (
     ProductVariantUpdate,
 )
 
+from app.schemas.inventory import (
+    InventoryAdjustRequest,
+    InventoryResponse,
+)
+
 
 __all__ = [
     "CategoryCreate",
@@ -38,5 +43,7 @@ __all__ = [
     "ProductVariantCreate",
     "ProductVariantResponse",
     "ProductVariantUpdate",
+    "InventoryAdjustRequest",
+    "InventoryResponse",
 ]
 

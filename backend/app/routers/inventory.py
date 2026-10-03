@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.database.session import get_db
 from app.models import Inventory, ProductVariant
-from app.schemas import InventoryAdjustRequest, InventoryResponse
+from app.schemas import InventoryAdjustRequest, InventoryReservationRequest, InventoryResponse
 
 
 router = APIRouter(

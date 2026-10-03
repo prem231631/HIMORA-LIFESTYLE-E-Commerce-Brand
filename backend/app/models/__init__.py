@@ -5,8 +5,10 @@ from app.models.product_image import ProductImage
 from app.models.product_variant import ProductVariant
 from app.models.cart import Cart
 from app.models.cart_item import CartItem
+from app.models.user import User
 
 __all__ = [
+    "User",
     "Cart",
     "CartItem",
     "Category",

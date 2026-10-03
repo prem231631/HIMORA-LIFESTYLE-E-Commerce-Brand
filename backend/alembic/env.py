@@ -10,6 +10,9 @@ from app.database.session import Base
 
 # Import all models so Alembic can detect them
 from app.models import (
+    Cart,
+    CartItem,
+    User,
     Category,
     Inventory,
     Product,

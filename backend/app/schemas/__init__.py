@@ -26,6 +26,7 @@ from app.schemas.product_variant import (
 from app.schemas.inventory import (
     InventoryAdjustRequest,
     InventoryResponse,
+    InventoryReservationRequest,
 )
 
 
@@ -45,5 +46,6 @@ __all__ = [
     "ProductVariantUpdate",
     "InventoryAdjustRequest",
     "InventoryResponse",
+    "InventoryReservationRequest",
 ]
 

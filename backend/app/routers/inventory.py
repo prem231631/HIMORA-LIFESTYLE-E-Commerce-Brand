@@ -151,3 +151,83 @@ def decrease_inventory(
     db.refresh(inventory)
 
     return inventory_response(inventory)
+
+
+@router.post(
+    "/reserve",
+    response_model=InventoryResponse,
+)
+def reserve_inventory(
+    variant_id: int,
+    reservation: InventoryReservationRequest,
+    db: Session = Depends(get_db),
+):
+    get_variant_or_404(variant_id, db)
+
+    inventory = db.scalar(
+        select(Inventory)
+        .where(Inventory.variant_id == variant_id)
+        .with_for_update()
+    )
+
+    if not inventory:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Inventory record not found.",
+        )
+
+    if reservation.quantity > inventory.available_quantity:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                f"Cannot reserve {reservation.quantity} units. "
+                f"Only {inventory.available_quantity} units are available."
+            ),
+        )
+
+    inventory.reserved_quantity += reservation.quantity
+
+    db.commit()
+    db.refresh(inventory)
+
+    return inventory_response(inventory)
+
+
+@router.post(
+    "/release",
+    response_model=InventoryResponse,
+)
+def release_inventory(
+    variant_id: int,
+    reservation: InventoryReservationRequest,
+    db: Session = Depends(get_db),
+):
+    get_variant_or_404(variant_id, db)
+
+    inventory = db.scalar(
+        select(Inventory)
+        .where(Inventory.variant_id == variant_id)
+        .with_for_update()
+    )
+
+    if not inventory:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Inventory record not found.",
+        )
+
+    if reservation.quantity > inventory.reserved_quantity:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                f"Cannot release {reservation.quantity} units. "
+                f"Only {inventory.reserved_quantity} units are reserved."
+            ),
+        )
+
+    inventory.reserved_quantity -= reservation.quantity
+
+    db.commit()
+    db.refresh(inventory)
+
+    return inventory_response(inventory)

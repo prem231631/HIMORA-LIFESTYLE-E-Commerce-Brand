@@ -1,7 +1,6 @@
 from fastapi import FastAPI
 
 from app.core.config import settings
-from app.database.session import Base, engine
 from app.models import (
     Category,
     Inventory,
@@ -16,10 +15,6 @@ app = FastAPI(
     version="1.0.0",
 )
 
-
-@app.on_event("startup")
-def create_tables():
-    Base.metadata.create_all(bind=engine)
 
 
 @app.get("/")

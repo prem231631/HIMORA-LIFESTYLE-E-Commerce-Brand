@@ -5,6 +5,10 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.session import Base
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from app.models.user import User
+
 
 class Cart(Base):
     __tablename__ = "carts"
@@ -40,4 +44,9 @@ class Cart(Base):
         "CartItem",
         back_populates="cart",
         cascade="all, delete-orphan",
+    )
+
+    user: Mapped["User"] = relationship(
+        "User",
+        back_populates="cart",
     )

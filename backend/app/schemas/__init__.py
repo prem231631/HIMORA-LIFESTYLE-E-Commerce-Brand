@@ -44,6 +44,14 @@ from app.schemas.auth import (
     UserResponse,
 )
 
+from app.schemas.order import (
+    CheckoutRequest,
+    OrderItemResponse,
+    OrderResponse,
+    OrderStatusHistoryResponse,
+    PaymentResponse,
+)
+
 from app.schemas.address import AddressCreate, AddressResponse, AddressUpdate
 
 __all__ = [
@@ -72,6 +80,11 @@ __all__ = [
     "UserResponse",
     "AddressCreate",
     "AddressResponse",
-    "AddressUpdate"
+    "AddressUpdate",
+    "CheckoutRequest",
+    "OrderItemResponse",
+    "OrderResponse",
+    "OrderStatusHistoryResponse",
+    "PaymentResponse",
 ]
 

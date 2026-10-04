@@ -22,6 +22,7 @@ from app.models import (
     ProductImage,
     ProductVariant,
     User,
+    Payment,
 )
 
 config = context.config

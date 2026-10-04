@@ -44,6 +44,7 @@ from app.schemas.auth import (
     UserResponse,
 )
 
+from app.schemas.address import AddressCreate, AddressResponse, AddressUpdate
 
 __all__ = [
     "CategoryCreate",
@@ -69,5 +70,8 @@ __all__ = [
     "LoginResponse",
     "RegisterRequest",
     "UserResponse",
+    "AddressCreate",
+    "AddressResponse",
+    "AddressUpdate"
 ]
 

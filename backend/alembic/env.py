@@ -13,12 +13,15 @@ from app.models import (
     Address,
     Cart,
     CartItem,
-    User,
     Category,
     Inventory,
+    Order,
+    OrderItem,
+    OrderStatusHistory,
     Product,
     ProductImage,
     ProductVariant,
+    User,
 )
 
 config = context.config

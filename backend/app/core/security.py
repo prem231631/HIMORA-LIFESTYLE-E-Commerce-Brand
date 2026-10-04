@@ -7,9 +7,14 @@ from app.core.config import settings
 from fastapi import HTTPException, status
 from fastapi.security import Depends, HTTPBearer, HTTPAuthorizationCredentials
 
+from sqlalchemy.orm import Session
+
+from app.database.session import get_db
+from app.models import User
+
+
+
 password_hash = PasswordHash.recommended()
-
-
 def hash_password(password: str) -> str:
     return password_hash.hash(password)
 
@@ -67,3 +72,25 @@ def get_current_user_id(
             detail="Invalid or expired access token.",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+
+def get_current_user(
+    user_id: int = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+) -> User:
+    user = db.get(User, user_id)
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="This account is inactive.",
+        )
+
+    return user

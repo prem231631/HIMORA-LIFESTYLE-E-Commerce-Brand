@@ -1,14 +1,12 @@
 from datetime import datetime, timedelta, timezone
 
 import jwt
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pwdlib import PasswordHash
-
-from app.core.config import settings
-from fastapi import HTTPException, status
-from fastapi.security import Depends, HTTPBearer, HTTPAuthorizationCredentials
-
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.database.session import get_db
 from app.models import User
 

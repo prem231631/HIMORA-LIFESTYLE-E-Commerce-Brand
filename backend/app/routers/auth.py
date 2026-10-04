@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.core.security import create_access_token, hash_password, verify_password
 from app.database.session import get_db
-from app.models import User
+from app.models import Cart, User
 from app.schemas import LoginRequest, LoginResponse, RegisterRequest, UserResponse
 
 from app.core.security import get_current_user
@@ -55,6 +55,12 @@ def register(
     )
 
     db.add(user)
+    db.flush()
+
+    cart =Cart(
+        user_id=user.id,
+    )
+    db.add(cart)
     db.commit()
     db.refresh(user)
 

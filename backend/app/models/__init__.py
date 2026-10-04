@@ -6,6 +6,7 @@ from app.models.product_variant import ProductVariant
 from app.models.cart import Cart
 from app.models.cart_item import CartItem
 from app.models.user import User
+from app.models.address import Address
 
 __all__ = [
     "User",
@@ -16,4 +17,5 @@ __all__ = [
     "ProductImage",
     "ProductVariant",
     "Inventory",
+    "Address"
 ]

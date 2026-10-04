@@ -1,5 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     Boolean,
@@ -13,7 +14,12 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.session import Base
+from backend.app.models.product_variant import ProductVariant
 
+if TYPE_CHECKING:
+    from app.models.category import Category
+    from app.models.product_image import ProductImage
+    from app.models.product_variant import ProductVariant
 
 class Product(Base):
     __tablename__ = "products"
@@ -102,7 +108,7 @@ class Product(Base):
         order_by="ProductImage.sort_order",
     )
 
-    variants = relationship(
+    variants: Mapped[list["ProductVariant"]] = relationship(
         "ProductVariant",
         back_populates="product",
         cascade="all, delete-orphan",

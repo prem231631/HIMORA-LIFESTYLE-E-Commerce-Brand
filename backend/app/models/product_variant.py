@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     Boolean,
@@ -11,7 +12,12 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.session import Base
+from backend.app.models.inventory import Inventory
+from backend.app.models.product import Product
 
+if TYPE_CHECKING:
+    from app.models.inventory import Inventory
+    from app.models.product import Product
 
 class ProductVariant(Base):
     __tablename__ = "product_variants"
@@ -71,12 +77,12 @@ class ProductVariant(Base):
         nullable=False,
     )
 
-    product = relationship(
+    product: Mapped["Product"] = relationship(
         "Product",
         back_populates="variants",
     )
 
-    inventory = relationship(
+    inventory: Mapped["Inventory | None"] = relationship(
         "Inventory",
         back_populates="variant",
         uselist=False,

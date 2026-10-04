@@ -8,6 +8,8 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database.session import Base
 
 if TYPE_CHECKING:
+    from app.models.order_item import OrderItem
+    from app.models.order_status_history import OrderStatusHistory
     from app.models.user import User
 
 
@@ -123,4 +125,17 @@ class Order(Base):
 
     user: Mapped["User"] = relationship(
         "User",
+    )
+
+    items: Mapped[list["OrderItem"]] = relationship(
+        "OrderItem",
+        back_populates="order",
+        cascade="all, delete-orphan",
+    )
+
+    status_history: Mapped[list["OrderStatusHistory"]] = relationship(
+        "OrderStatusHistory",
+        back_populates="order",
+        cascade="all, delete-orphan",
+        order_by="OrderStatusHistory.created_at",
     )

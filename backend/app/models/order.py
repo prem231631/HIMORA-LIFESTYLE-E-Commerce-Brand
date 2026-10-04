@@ -10,6 +10,7 @@ from app.database.session import Base
 if TYPE_CHECKING:
     from app.models.order_item import OrderItem
     from app.models.order_status_history import OrderStatusHistory
+    from app.models.payment import Payment
     from app.models.user import User
 
 
@@ -138,4 +139,11 @@ class Order(Base):
         back_populates="order",
         cascade="all, delete-orphan",
         order_by="OrderStatusHistory.created_at",
+    )
+
+    payment: Mapped["Payment | None"] = relationship(
+        "Payment",
+        back_populates="order",
+        uselist=False,
+        cascade="all, delete-orphan",
     )

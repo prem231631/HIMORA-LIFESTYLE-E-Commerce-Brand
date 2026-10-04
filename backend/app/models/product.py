@@ -14,7 +14,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.session import Base
-from backend.app.models.product_variant import ProductVariant
+from app.models.product_variant import ProductVariant
 
 if TYPE_CHECKING:
     from app.models.category import Category

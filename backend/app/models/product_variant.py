@@ -1,19 +1,10 @@
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import (
-    Boolean,
-    DateTime,
-    ForeignKey,
-    String,
-    UniqueConstraint,
-    func,
-)
+from sqlalchemy import DateTime, ForeignKey, String, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
+from sqlalchemy import Boolean, DateTime, ForeignKey, String, UniqueConstraint, func
 from app.database.session import Base
-from backend.app.models.inventory import Inventory
-from backend.app.models.product import Product
 
 if TYPE_CHECKING:
     from app.models.inventory import Inventory

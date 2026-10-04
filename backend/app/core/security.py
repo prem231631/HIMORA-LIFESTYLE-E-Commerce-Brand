@@ -5,6 +5,7 @@ from pwdlib import PasswordHash
 
 from app.core.config import settings
 from fastapi import HTTPException, status
+from fastapi.security import Depends, HTTPBearer, HTTPAuthorizationCredentials
 
 password_hash = PasswordHash.recommended()
 
@@ -54,10 +55,12 @@ def decode_access_token(token: str) -> int:
 
     return int(user_id)
 
-
-def get_current_user_id(token: str) -> int:
+bearer_scheme = HTTPBearer()
+def get_current_user_id(
+    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+) -> int:
     try:
-        return decode_access_token(token)
+        return decode_access_token(credentials.credentials)
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

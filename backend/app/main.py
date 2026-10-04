@@ -9,6 +9,7 @@ from app.routers.product_variant import router as product_variants_router
 from app.routers.inventory import router as inventory_router    
 from app.routers.auth import router as auth_router
 from app.routers.cart import router as cart_router
+from app.routers.addresses import router as addresses_router
 
 app = FastAPI(
     title=settings.app_name,
@@ -34,6 +35,7 @@ app.include_router(product_variants_router)
 app.include_router(inventory_router)
 app.include_router(auth_router)
 app.include_router(cart_router)
+app.include_router(addresses_router)
 
 @app.get("/")
 def root():

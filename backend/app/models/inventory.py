@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     CheckConstraint,
@@ -10,8 +11,10 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.session import Base
+from backend.app.models.product_variant import ProductVariant
 
-
+if TYPE_CHECKING:
+    from app.models.product_variant import ProductVariant
 class Inventory(Base):
     __tablename__ = "inventory"
 
@@ -67,7 +70,7 @@ class Inventory(Base):
         nullable=False,
     )
 
-    variant = relationship(
+    variant: Mapped["ProductVariant"] = relationship(
         "ProductVariant",
         back_populates="inventory",
     )

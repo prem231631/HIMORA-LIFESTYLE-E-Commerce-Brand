@@ -30,6 +30,13 @@ from app.schemas.inventory import (
     
 )
 
+from app.schemas.cart import (
+    CartItemAdd,
+    CartItemResponse,
+    CartItemUpdate,
+    CartResponse,
+)
+
 
 __all__ = [
     "CategoryCreate",
@@ -47,5 +54,9 @@ __all__ = [
     "ProductVariantUpdate",
     "InventoryAdjustRequest",
     "InventoryResponse",
+    "CartItemAdd",
+    "CartItemResponse",
+    "CartItemUpdate",
+    "CartResponse",
 ]
 

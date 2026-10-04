@@ -37,6 +37,13 @@ from app.schemas.cart import (
     CartResponse,
 )
 
+from app.schemas.auth import (
+    LoginRequest,
+    LoginResponse,
+    RegisterRequest,
+    UserResponse,
+)
+
 
 __all__ = [
     "CategoryCreate",
@@ -58,5 +65,9 @@ __all__ = [
     "CartItemResponse",
     "CartItemUpdate",
     "CartResponse",
+    "LoginRequest",
+    "LoginResponse",
+    "RegisterRequest",
+    "UserResponse",
 ]
 

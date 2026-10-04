@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from app.models.product_variant import ProductVariant
-
+    from app.models.cart import Cart
 
 class CartItem(Base):
     __tablename__ = "cart_items"

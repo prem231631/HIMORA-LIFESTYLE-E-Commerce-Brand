@@ -8,6 +8,7 @@ from app.database.session import Base
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from app.models.user import User
+    from app.models.cart_item import CartItem
 
 
 class Cart(Base):

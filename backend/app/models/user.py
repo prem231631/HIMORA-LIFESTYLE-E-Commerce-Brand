@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from app.models.cart import Cart
+    from app.models.address import Address
 
 class User(Base):
     __tablename__ = "users"
@@ -63,5 +64,11 @@ class User(Base):
         "Cart",
         back_populates="user",
         uselist=False,
+        cascade="all, delete-orphan",
+    )
+
+    addresses: Mapped[list["Address"]] = relationship(
+        "Address",
+        back_populates="user",
         cascade="all, delete-orphan",
     )

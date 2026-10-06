@@ -6,6 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from app.schemas import (
+    AdminOrderResponse,
     CheckoutRequest,
     OrderCancelRequest,
     OrderResponse,
@@ -691,3 +692,65 @@ def update_order_status(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Unable to update order status.",
         )
+
+@router.get(
+    "/admin/{order_id}",
+    response_model=AdminOrderResponse,
+)
+def get_admin_order(
+    order_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
+):
+    order = (
+        db.query(Order)
+        .options(
+            selectinload(Order.items),
+            selectinload(Order.status_history),
+            selectinload(Order.payment),
+        )
+        .filter(Order.id == order_id)
+        .first()
+    )
+
+    if not order:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order not found.",
+        )
+
+    customer = db.get(User, order.user_id)
+
+    if not customer:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Customer not found.",
+        )
+
+    return AdminOrderResponse(
+        id=order.id,
+        order_number=order.order_number,
+        status=order.status,
+        payment_method=order.payment_method,
+        payment_status=order.payment_status,
+        subtotal=order.subtotal,
+        shipping_fee=order.shipping_fee,
+        total_amount=order.total_amount,
+        shipping_full_name=order.shipping_full_name,
+        shipping_phone=order.shipping_phone,
+        shipping_province=order.shipping_province,
+        shipping_city=order.shipping_city,
+        shipping_address_line=order.shipping_address_line,
+        shipping_landmark=order.shipping_landmark,
+        shipping_postal_code=order.shipping_postal_code,
+        notes=order.notes,
+        created_at=order.created_at,
+        updated_at=order.updated_at,
+        items=order.items,
+        status_history=order.status_history,
+        payment=order.payment,
+        customer_id=customer.id,
+        customer_name=customer.full_name,
+        customer_email=customer.email,
+        customer_phone=customer.phone,
+    )

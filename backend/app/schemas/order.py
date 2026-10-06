@@ -79,3 +79,14 @@ class OrderCancelRequest(BaseModel):
         default=None,
         max_length=500,
     )
+
+
+class OrderStatusUpdateRequest(BaseModel):
+    status: str = Field(
+        min_length=1,
+        max_length=30,
+    )
+    note: str | None = Field(
+        default=None,
+        max_length=500,
+    )

@@ -4,7 +4,13 @@ from uuid import uuid4
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
-from app.schemas import CheckoutRequest, OrderCancelRequest, OrderResponse, OrderStatusUpdateRequest
+
+from app.schemas import (
+    CheckoutRequest,
+    OrderCancelRequest,
+    OrderResponse,
+    OrderStatusUpdateRequest,
+)
 from app.core.security import get_current_user, require_admin
 from app.database.session import get_db
 from app.models import (
@@ -18,7 +24,6 @@ from app.models import (
     Payment,
     User,
 )
-from app.schemas import CheckoutRequest, OrderResponse
 
 
 router = APIRouter(
@@ -30,6 +35,10 @@ router = APIRouter(
 def generate_order_number() -> str:
     return f"HIM-{uuid4().hex[:10].upper()}"
 
+
+# =========================================================
+# CUSTOMER CHECKOUT
+# =========================================================
 
 @router.post(
     "/checkout",
@@ -254,6 +263,10 @@ def checkout(
         )
 
 
+# =========================================================
+# CUSTOMER ORDERS
+# =========================================================
+
 @router.get(
     "",
     response_model=list[OrderResponse],
@@ -275,6 +288,10 @@ def get_my_orders(
 
     return orders
 
+
+# =========================================================
+# CUSTOMER ORDER DETAIL
+# =========================================================
 
 @router.get(
     "/{order_id}",
@@ -306,6 +323,10 @@ def get_my_order(
 
     return order
 
+
+# =========================================================
+# CUSTOMER CANCEL ORDER
+# =========================================================
 
 @router.post(
     "/{order_id}/cancel",
@@ -383,7 +404,11 @@ def cancel_order(
         # -----------------------------------------------------
         # 5. Add status history
         # -----------------------------------------------------
-        reason = cancel_data.reason.strip() if cancel_data.reason else None
+        reason = (
+            cancel_data.reason.strip()
+            if cancel_data.reason
+            else None
+        )
 
         history_note = "Order cancelled by customer."
 
@@ -399,12 +424,16 @@ def cancel_order(
         db.add(status_history)
 
         # -----------------------------------------------------
-        # 6. COD payment remains pending
+        # 6. COD payment remains PENDING
+        #
+        # No money was collected because this is Cash on
+        # Delivery and the order was cancelled before delivery.
         # -----------------------------------------------------
-        if order.payment:
-            order.payment.payment_status = "CANCELLED"
+        order.payment_status = "PENDING"
 
-        order.payment_status = "CANCELLED"
+        if order.payment:
+            order.payment.payment_status = "PENDING"
+            order.payment.paid_at = None
 
         # -----------------------------------------------------
         # 7. Commit cancellation
@@ -438,6 +467,10 @@ def cancel_order(
         )
 
 
+# =========================================================
+# ADMIN — GET ALL ORDERS
+# =========================================================
+
 @router.get(
     "/admin/all",
     response_model=list[OrderResponse],
@@ -458,6 +491,10 @@ def get_all_orders(
 
     return orders
 
+
+# =========================================================
+# ADMIN — UPDATE ORDER STATUS
+# =========================================================
 
 @router.patch(
     "/admin/{order_id}/status",
@@ -486,6 +523,9 @@ def update_order_status(
             detail=f"Invalid order status: {new_status}.",
         )
 
+    # ---------------------------------------------------------
+    # Find order
+    # ---------------------------------------------------------
     order = db.scalar(
         select(Order)
         .options(
@@ -502,6 +542,9 @@ def update_order_status(
             detail="Order not found.",
         )
 
+    # ---------------------------------------------------------
+    # Prevent updates to terminal orders
+    # ---------------------------------------------------------
     if order.status == "CANCELLED":
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -514,6 +557,9 @@ def update_order_status(
             detail="A delivered order cannot be updated.",
         )
 
+    # ---------------------------------------------------------
+    # Valid status transitions
+    # ---------------------------------------------------------
     valid_transitions = {
         "PENDING": {"CONFIRMED"},
         "CONFIRMED": {"PROCESSING"},
@@ -532,6 +578,9 @@ def update_order_status(
         )
 
     try:
+        # -----------------------------------------------------
+        # Update order status
+        # -----------------------------------------------------
         order.status = new_status
 
         history_note = (
@@ -548,16 +597,36 @@ def update_order_status(
             )
         )
 
-        # COD payment is marked paid only after delivery.
+        # -----------------------------------------------------
+        # DELIVERY
+        #
+        # COD payment becomes PAID only after delivery.
+        # Inventory is permanently finalized here.
+        # -----------------------------------------------------
         if new_status == "DELIVERED":
             order.payment_status = "PAID"
 
             if order.payment:
                 order.payment.payment_status = "PAID"
+
                 from datetime import datetime, timezone
+
                 order.payment.paid_at = datetime.now(timezone.utc)
 
-            # Finalize reserved inventory.
+            # -------------------------------------------------
+            # Finalize inventory
+            #
+            # stock_quantity:
+            #     Permanently decreases because the product
+            #     has been sold.
+            #
+            # reserved_quantity:
+            #     Decreases because the reservation is no
+            #     longer needed.
+            #
+            # sold_quantity:
+            #     Increases because the product was delivered.
+            # -------------------------------------------------
             for order_item in order.items:
                 inventory = db.scalar(
                     select(Inventory)
@@ -568,16 +637,38 @@ def update_order_status(
                 )
 
                 if inventory:
-                    inventory.reserved_quantity = max(
-                        inventory.reserved_quantity
-                        - order_item.quantity,
-                        0,
-                    )
+                    quantity = order_item.quantity
 
-                    inventory.sold_quantity += order_item.quantity
+                    if inventory.reserved_quantity < quantity:
+                        raise HTTPException(
+                            status_code=status.HTTP_409_CONFLICT,
+                            detail=(
+                                "Reserved inventory is insufficient "
+                                "to finalize this delivery."
+                            ),
+                        )
 
+                    if inventory.stock_quantity < quantity:
+                        raise HTTPException(
+                            status_code=status.HTTP_409_CONFLICT,
+                            detail=(
+                                "Inventory stock is insufficient "
+                                "to finalize this delivery."
+                            ),
+                        )
+
+                    inventory.stock_quantity -= quantity
+                    inventory.reserved_quantity -= quantity
+                    inventory.sold_quantity += quantity
+
+        # -----------------------------------------------------
+        # Commit
+        # -----------------------------------------------------
         db.commit()
 
+        # -----------------------------------------------------
+        # Reload complete order
+        # -----------------------------------------------------
         order = db.scalar(
             select(Order)
             .options(

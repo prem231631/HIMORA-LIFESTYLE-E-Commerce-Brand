@@ -7,10 +7,12 @@ import EyewearSection from "./components/layout/EyewearSection";
 import FeaturedProducts from "./components/layout/FeaturedProducts";
 
 import ProductDetails from "./pages/public/ProductDetails";
+
 import AdminOrders from "./pages/admin/AdminOrders";
+import AdminOrderDetails from "./pages/admin/AdminOrderDetail";
+
 import Register from "./pages/auth/Register";
 import Login from "./pages/auth/Login";
-import AdminOrderDetails from "./pages/admin/AdminOrderDetail";
 
 function HomePage() {
     return (
@@ -27,17 +29,18 @@ function HomePage() {
     );
 }
 
-
 function App() {
     return (
         <BrowserRouter>
             <Routes>
 
+                {/* HOME */}
                 <Route
                     path="/"
                     element={<HomePage />}
                 />
 
+                {/* PRODUCT DETAILS */}
                 <Route
                     path="/products/:productId"
                     element={
@@ -48,14 +51,31 @@ function App() {
                     }
                 />
 
-                <Route path="/admin/orders" element={<AdminOrders />} />
-                <Route path="/register" element={<Register />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/admin/orders/:orderId" element={<AdminOrderDetails />} />
+                {/* AUTH */}
+                <Route
+                    path="/register"
+                    element={<Register />}
+                />
+
+                <Route
+                    path="/login"
+                    element={<Login />}
+                />
+
+                {/* ADMIN */}
+                <Route
+                    path="/admin/orders"
+                    element={<AdminOrders />}
+                />
+
+                <Route
+                    path="/admin/orders/:orderId"
+                    element={<AdminOrderDetails />}
+                />
+
             </Routes>
         </BrowserRouter>
     );
 }
-
 
 export default App;

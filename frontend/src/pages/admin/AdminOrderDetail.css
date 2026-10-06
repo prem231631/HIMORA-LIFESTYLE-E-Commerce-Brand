@@ -1,0 +1,715 @@
+/* =========================================================
+   HIMORA ADMIN — ORDER DETAIL
+   Luxury editorial design system
+   ========================================================= */
+
+.admin-order-detail-page {
+  min-height: 100vh;
+  padding: 40px 48px 80px;
+  background: #f7f5f0;
+  color: #111111;
+}
+
+/* ---------------------------------------------------------
+   TOP BAR
+   --------------------------------------------------------- */
+
+.admin-order-detail-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 42px;
+}
+
+.admin-order-back,
+.admin-order-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #d8d2c8;
+  background: transparent;
+  color: #111111;
+  padding: 11px 16px;
+  font-family: "Manrope", sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    background 180ms ease,
+    color 180ms ease,
+    border-color 180ms ease;
+}
+
+.admin-order-back:hover,
+.admin-order-refresh:hover {
+  background: #111111;
+  border-color: #111111;
+  color: #ffffff;
+}
+
+.admin-order-refresh:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ---------------------------------------------------------
+   HEADER
+   --------------------------------------------------------- */
+
+.admin-order-detail-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 32px;
+  padding-bottom: 32px;
+  border-bottom: 1px solid #d8d2c8;
+  margin-bottom: 32px;
+}
+
+.admin-order-detail-header h1 {
+  margin: 7px 0 10px;
+  font-family: "Cormorant Garamond", serif;
+  font-size: clamp(42px, 5vw, 64px);
+  font-weight: 500;
+  line-height: 0.95;
+  letter-spacing: -0.035em;
+}
+
+.admin-order-detail-header p {
+  margin: 0;
+  color: #756f67;
+  font-family: "Manrope", sans-serif;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.admin-orders-eyebrow {
+  margin: 0;
+  color: #756f67;
+  font-family: "Manrope", sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+/* ---------------------------------------------------------
+   STATUS BADGES
+   --------------------------------------------------------- */
+
+.admin-order-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 8px 14px;
+  border: 1px solid #d8d2c8;
+  background: #ffffff;
+  color: #111111;
+  font-family: "Manrope", sans-serif;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.admin-order-status-pending {
+  background: #ffffff;
+}
+
+.admin-order-status-confirmed {
+  background: #f1eee8;
+}
+
+.admin-order-status-processing {
+  background: #ebe7df;
+}
+
+.admin-order-status-shipped {
+  background: #e5e1d8;
+}
+
+.admin-order-status-out-for-delivery {
+  background: #dcd7cd;
+}
+
+.admin-order-status-delivered {
+  background: #26352d;
+  border-color: #26352d;
+  color: #ffffff;
+}
+
+.admin-order-status-cancelled {
+  background: #111111;
+  border-color: #111111;
+  color: #ffffff;
+}
+
+/* ---------------------------------------------------------
+   MAIN GRID
+   --------------------------------------------------------- */
+
+.admin-order-detail-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(300px, 0.8fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.admin-order-detail-main,
+.admin-order-detail-sidebar {
+  min-width: 0;
+}
+
+.admin-order-detail-main {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.admin-order-detail-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ---------------------------------------------------------
+   PANELS
+   --------------------------------------------------------- */
+
+.admin-order-panel {
+  background: #ffffff;
+  border: 1px solid #d8d2c8;
+  padding: 28px;
+}
+
+.admin-order-panel-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding-bottom: 20px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid #ebe7df;
+}
+
+.admin-order-panel-heading span {
+  display: block;
+  margin-bottom: 5px;
+  color: #8a837a;
+  font-family: "Manrope", sans-serif;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.admin-order-panel-heading h2 {
+  margin: 0;
+  color: #111111;
+  font-family: "Cormorant Garamond", serif;
+  font-size: 29px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.admin-order-panel-heading svg {
+  flex-shrink: 0;
+  color: #756f67;
+}
+
+/* ---------------------------------------------------------
+   ORDER ITEMS
+   --------------------------------------------------------- */
+
+.admin-order-items {
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-order-item {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 18px;
+  padding: 20px 0;
+  border-bottom: 1px solid #ebe7df;
+}
+
+.admin-order-item:last-child {
+  border-bottom: 0;
+}
+
+.admin-order-item-image {
+  width: 64px;
+  height: 76px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f1eee8;
+  color: #756f67;
+}
+
+.admin-order-item-info {
+  min-width: 0;
+}
+
+.admin-order-item-info h3 {
+  margin: 0 0 7px;
+  color: #111111;
+  font-family: "Cormorant Garamond", serif;
+  font-size: 23px;
+  font-weight: 500;
+}
+
+.admin-order-item-info p {
+  margin: 3px 0;
+  color: #817a71;
+  font-family: "Manrope", sans-serif;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.admin-order-item-quantity {
+  color: #756f67;
+  font-family: "Manrope", sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.admin-order-item-price {
+  min-width: 110px;
+  color: #111111;
+  font-family: "Manrope", sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------
+   TOTALS
+   --------------------------------------------------------- */
+
+.admin-order-totals {
+  padding-top: 18px;
+  border-top: 1px solid #d8d2c8;
+}
+
+.admin-order-totals > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 7px 0;
+}
+
+.admin-order-totals span {
+  color: #756f67;
+  font-family: "Manrope", sans-serif;
+  font-size: 11px;
+}
+
+.admin-order-totals strong {
+  color: #111111;
+  font-family: "Manrope", sans-serif;
+  font-size: 12px;
+}
+
+.admin-order-totals .admin-order-total {
+  margin-top: 12px;
+  padding-top: 17px;
+  border-top: 1px solid #111111;
+}
+
+.admin-order-totals .admin-order-total span {
+  color: #111111;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.admin-order-totals .admin-order-total strong {
+  font-size: 16px;
+}
+
+/* ---------------------------------------------------------
+   TIMELINE
+   --------------------------------------------------------- */
+
+.admin-order-timeline {
+  position: relative;
+  padding-top: 14px;
+}
+
+.admin-order-timeline-item {
+  position: relative;
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr);
+  gap: 16px;
+  padding: 0 0 25px;
+}
+
+.admin-order-timeline-item:last-child {
+  padding-bottom: 0;
+}
+
+.admin-order-timeline-item:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  top: 13px;
+  left: 6px;
+  bottom: 0;
+  width: 1px;
+  background: #d8d2c8;
+}
+
+.admin-order-timeline-marker {
+  position: relative;
+  z-index: 1;
+  width: 13px;
+  height: 13px;
+  margin-top: 2px;
+  border: 3px solid #ffffff;
+  outline: 1px solid #111111;
+  background: #111111;
+}
+
+.admin-order-timeline-item strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #111111;
+  font-family: "Manrope", sans-serif;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.admin-order-timeline-item p {
+  margin: 0 0 5px;
+  color: #756f67;
+  font-family: "Manrope", sans-serif;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.admin-order-timeline-item small {
+  color: #a59d92;
+  font-family: "Manrope", sans-serif;
+  font-size: 9px;
+}
+
+/* ---------------------------------------------------------
+   INFORMATION BLOCKS
+   --------------------------------------------------------- */
+
+.admin-order-information {
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-order-information > div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 14px 0;
+  border-bottom: 1px solid #ebe7df;
+}
+
+.admin-order-information > div:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.admin-order-information > div:first-child {
+  padding-top: 16px;
+}
+
+.admin-order-information span {
+  color: #8a837a;
+  font-family: "Manrope", sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.admin-order-information strong {
+  color: #111111;
+  font-family: "Manrope", sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.55;
+}
+
+/* ---------------------------------------------------------
+   FULFILLMENT
+   --------------------------------------------------------- */
+
+.admin-order-status-control {
+  padding-top: 18px;
+}
+
+.admin-order-status-control > p:first-child {
+  margin: 0 0 16px;
+  color: #756f67;
+  font-family: "Manrope", sans-serif;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.admin-order-status-control > p:first-child strong {
+  color: #111111;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.admin-order-status-update {
+  width: 100%;
+  min-height: 46px;
+  padding: 12px 18px;
+  border: 1px solid #111111;
+  background: #111111;
+  color: #ffffff;
+  font-family: "Manrope", sans-serif;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    background 180ms ease,
+    color 180ms ease,
+    border-color 180ms ease;
+}
+
+.admin-order-status-update:hover {
+  background: #26352d;
+  border-color: #26352d;
+}
+
+.admin-order-status-update:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.admin-order-status-complete {
+  margin: 16px 0 0;
+  padding: 12px 14px;
+  border-left: 2px solid #26352d;
+  background: #f1eee8;
+  color: #26352d;
+  font-family: "Manrope", sans-serif;
+  font-size: 10px;
+  line-height: 1.6;
+}
+
+.admin-order-status-message {
+  margin: 14px 0 0;
+  color: #26352d;
+  font-family: "Manrope", sans-serif;
+  font-size: 10px;
+  line-height: 1.6;
+}
+
+/* ---------------------------------------------------------
+   NOTES
+   --------------------------------------------------------- */
+
+.admin-order-notes {
+  margin: 18px 0 0;
+  padding: 16px;
+  background: #f7f5f0;
+  border-left: 2px solid #a59d92;
+  color: #756f67;
+  font-family: "Manrope", sans-serif;
+  font-size: 11px;
+  line-height: 1.7;
+}
+
+/* ---------------------------------------------------------
+   LOADING / ERRORS
+   --------------------------------------------------------- */
+
+.admin-order-detail-loading,
+.admin-order-detail-error {
+  min-height: 420px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 16px;
+  border: 1px solid #d8d2c8;
+  background: #ffffff;
+  font-family: "Manrope", sans-serif;
+}
+
+.admin-order-detail-loading {
+  color: #756f67;
+  font-size: 12px;
+}
+
+.admin-order-detail-error {
+  color: #111111;
+  text-align: center;
+}
+
+.admin-order-detail-error p {
+  margin: 0;
+  color: #756f67;
+  font-size: 12px;
+}
+
+.admin-order-detail-retry {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #111111;
+  background: #111111;
+  color: #ffffff;
+  padding: 11px 16px;
+  font-family: "Manrope", sans-serif;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.admin-order-inline-error {
+  margin-bottom: 24px;
+  padding: 13px 16px;
+  border-left: 2px solid #111111;
+  background: #ebe7df;
+  color: #111111;
+  font-family: "Manrope", sans-serif;
+  font-size: 11px;
+}
+
+/* ---------------------------------------------------------
+   REFRESH ANIMATION
+   --------------------------------------------------------- */
+
+.admin-order-spin {
+  animation: himora-order-spin 800ms linear infinite;
+}
+
+@keyframes himora-order-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---------------------------------------------------------
+   RESPONSIVE
+   --------------------------------------------------------- */
+
+@media (max-width: 1100px) {
+  .admin-order-detail-page {
+    padding: 32px 28px 64px;
+  }
+
+  .admin-order-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-order-detail-sidebar {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-order-detail-sidebar .admin-order-panel:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .admin-order-detail-sidebar .admin-order-panel:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 720px) {
+  .admin-order-detail-page {
+    padding: 24px 16px 48px;
+  }
+
+  .admin-order-detail-topbar {
+    margin-bottom: 30px;
+  }
+
+  .admin-order-detail-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .admin-order-detail-header h1 {
+    font-size: 42px;
+  }
+
+  .admin-order-detail-sidebar {
+    display: flex;
+  }
+
+  .admin-order-panel {
+    padding: 20px;
+  }
+
+  .admin-order-item {
+    grid-template-columns: 56px minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  .admin-order-item-image {
+    width: 56px;
+    height: 68px;
+  }
+
+  .admin-order-item-quantity {
+    grid-column: 2;
+  }
+
+  .admin-order-item-price {
+    grid-column: 2;
+    text-align: left;
+  }
+
+  .admin-order-panel-heading h2 {
+    font-size: 26px;
+  }
+
+  .admin-order-back,
+  .admin-order-refresh {
+    padding: 10px 12px;
+    font-size: 9px;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-order-detail-topbar {
+    gap: 10px;
+  }
+
+  .admin-order-back,
+  .admin-order-refresh {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .admin-order-detail-header h1 {
+    font-size: 36px;
+  }
+
+  .admin-order-status {
+    font-size: 9px;
+  }
+
+  .admin-order-item-info h3 {
+    font-size: 20px;
+  }
+}

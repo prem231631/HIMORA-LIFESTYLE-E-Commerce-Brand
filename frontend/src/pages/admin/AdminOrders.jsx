@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Eye, RefreshCw, Search } from "lucide-react";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
 function AdminOrders() {
+  const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
   const [search, setSearch] = useState("");
@@ -213,11 +215,12 @@ function AdminOrders() {
 
                   <td>
                     <button
-                      type="button"
-                      className="admin-order-view"
-                      title="View order"
+                        type="button"
+                        className="admin-order-view"
+                        title="View order"
+                        onClick={() => navigate(`/admin/orders/${order.id}`)}
                     >
-                      <Eye size={17} />
+                        <Eye size={17} />
                     </button>
                   </td>
                 </tr>

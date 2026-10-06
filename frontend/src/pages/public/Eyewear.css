@@ -1,0 +1,321 @@
+/* =========================================================
+   HIMORA — EYEWEAR
+   ========================================================= */
+
+.eyewear-page {
+    min-height: 100vh;
+    background: #f7f5f0;
+    color: #111111;
+}
+
+/* ---------------------------------------------------------
+   HERO
+   --------------------------------------------------------- */
+
+.eyewear-page-hero {
+    min-height: 68vh;
+    display: flex;
+    align-items: flex-end;
+    padding: 80px 7vw;
+    background: #26352d;
+    color: #ffffff;
+}
+
+.eyewear-page-hero-content {
+    max-width: 760px;
+}
+
+.eyewear-page-eyebrow {
+    margin: 0 0 20px;
+    font-family: "Manrope", sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+}
+
+.eyewear-page-hero h1 {
+    margin: 0;
+    font-family: "Cormorant Garamond", serif;
+    font-size: clamp(64px, 9vw, 130px);
+    font-weight: 400;
+    line-height: 0.85;
+    letter-spacing: -0.045em;
+}
+
+.eyewear-page-hero-content > p:last-child {
+    max-width: 520px;
+    margin: 28px 0 0;
+    color: rgba(255, 255, 255, 0.78);
+    font-family: "Manrope", sans-serif;
+    font-size: 13px;
+    line-height: 1.8;
+}
+
+/* ---------------------------------------------------------
+   INTRO
+   --------------------------------------------------------- */
+
+.eyewear-page-intro {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 60px;
+    padding: 120px 7vw;
+    border-bottom: 1px solid #d8d2c8;
+}
+
+.eyewear-page-intro-label {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    color: #8a837a;
+    font-family: "Manrope", sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+}
+
+.eyewear-page-intro-copy {
+    max-width: 720px;
+}
+
+.eyewear-page-intro-copy h2 {
+    margin: 0 0 24px;
+    font-family: "Cormorant Garamond", serif;
+    font-size: clamp(44px, 5vw, 72px);
+    font-weight: 400;
+    line-height: 0.95;
+    letter-spacing: -0.035em;
+}
+
+.eyewear-page-intro-copy p {
+    max-width: 580px;
+    margin: 0;
+    color: #756f67;
+    font-family: "Manrope", sans-serif;
+    font-size: 13px;
+    line-height: 1.9;
+}
+
+/* ---------------------------------------------------------
+   PRODUCTS
+   --------------------------------------------------------- */
+
+.eyewear-products {
+    padding: 100px 7vw 120px;
+}
+
+.eyewear-products-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 30px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid #d8d2c8;
+}
+
+.eyewear-products-header p {
+    margin: 0 0 7px;
+    color: #8a837a;
+    font-family: "Manrope", sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+}
+
+.eyewear-products-header h2 {
+    margin: 0;
+    font-family: "Cormorant Garamond", serif;
+    font-size: 52px;
+    font-weight: 400;
+    line-height: 0.9;
+}
+
+.eyewear-products-header > span {
+    color: #8a837a;
+    font-family: "Manrope", sans-serif;
+    font-size: 10px;
+    text-transform: uppercase;
+}
+
+/* ---------------------------------------------------------
+   PRODUCT GRID
+   --------------------------------------------------------- */
+
+.eyewear-product-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+    margin-top: 28px;
+}
+
+.eyewear-product-card {
+    min-width: 0;
+}
+
+.eyewear-product-image {
+    position: relative;
+    display: block;
+    height: 620px;
+    overflow: hidden;
+    background: #ebe7df;
+    color: #ffffff;
+    text-decoration: none;
+}
+
+.eyewear-product-image img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+    transition: transform 500ms ease;
+}
+
+.eyewear-product-image::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        to top,
+        rgba(17, 17, 17, 0.55),
+        transparent 45%
+    );
+    pointer-events: none;
+}
+
+.eyewear-product-image:hover img {
+    transform: scale(1.025);
+}
+
+.eyewear-product-image span {
+    position: absolute;
+    z-index: 2;
+    left: 24px;
+    bottom: 22px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.7);
+    font-family: "Manrope", sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.eyewear-product-info {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 18px 0 0;
+}
+
+.eyewear-product-info p {
+    margin: 0 0 6px;
+    color: #8a837a;
+    font-family: "Manrope", sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.13em;
+}
+
+.eyewear-product-info h3 {
+    margin: 0;
+    font-family: "Cormorant Garamond", serif;
+    font-size: 29px;
+    font-weight: 500;
+}
+
+.eyewear-product-info strong {
+    padding-top: 17px;
+    color: #111111;
+    font-family: "Manrope", sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+/* ---------------------------------------------------------
+   STATEMENT
+   --------------------------------------------------------- */
+
+.eyewear-page-statement {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 140px 24px;
+    border-top: 1px solid #d8d2c8;
+    text-align: center;
+}
+
+.eyewear-page-statement p {
+    margin: 0 0 32px;
+    font-family: "Cormorant Garamond", serif;
+    font-size: clamp(44px, 6vw, 82px);
+    font-weight: 400;
+    line-height: 0.95;
+    letter-spacing: -0.04em;
+}
+
+.eyewear-page-statement a {
+    color: #111111;
+    font-family: "Manrope", sans-serif;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-decoration: none;
+    border-bottom: 1px solid #111111;
+    padding-bottom: 5px;
+}
+
+/* ---------------------------------------------------------
+   RESPONSIVE
+   --------------------------------------------------------- */
+
+@media (max-width: 800px) {
+    .eyewear-page-intro {
+        grid-template-columns: 1fr;
+        gap: 30px;
+        padding: 90px 6vw;
+    }
+
+    .eyewear-product-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .eyewear-product-image {
+        height: 560px;
+    }
+}
+
+@media (max-width: 600px) {
+    .eyewear-page-hero {
+        min-height: 70vh;
+        padding: 60px 24px;
+    }
+
+    .eyewear-page-intro {
+        padding: 72px 24px;
+    }
+
+    .eyewear-products {
+        padding: 72px 24px 90px;
+    }
+
+    .eyewear-product-image {
+        height: 480px;
+    }
+
+    .eyewear-product-info {
+        gap: 12px;
+    }
+
+    .eyewear-product-info h3 {
+        font-size: 25px;
+    }
+
+    .eyewear-page-statement {
+        padding: 90px 24px;
+    }
+}

@@ -7,6 +7,7 @@ import EyewearSection from "./components/layout/EyewearSection";
 import FeaturedProducts from "./components/layout/FeaturedProducts";
 import Collections from "./pages/public/Collections";
 import Eyewear from "./pages/public/Eyewear";
+import Apparel from "./pages/public/Apparel";
 
 import ProductDetails from "./pages/public/ProductDetails";
 
@@ -57,6 +58,14 @@ function App() {
                         <Eyewear />
                     </>
                 } />    
+
+                {/* APPAREL */}
+                <Route path="/apparel" element={
+                    <>
+                        <Navbar />
+                        <Apparel />
+                    </>
+                } />
 
                 {/* PRODUCT DETAILS */}
                 <Route

@@ -1,0 +1,290 @@
+/* =========================================================
+   HIMORA — APPAREL
+   ========================================================= */
+
+.apparel-page {
+    min-height: 100vh;
+    background: #f7f5f0;
+    color: #111111;
+}
+
+/* ---------------------------------------------------------
+   HERO
+   --------------------------------------------------------- */
+
+.apparel-page-hero {
+    min-height: 68vh;
+    display: flex;
+    align-items: flex-end;
+    padding: 80px 7vw;
+    background: #827b70;
+    color: #ffffff;
+}
+
+.apparel-page-hero-content {
+    max-width: 760px;
+}
+
+.apparel-page-eyebrow {
+    margin: 0 0 20px;
+    font-family: "Manrope", sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+}
+
+.apparel-page-hero h1 {
+    margin: 0;
+    font-family: "Cormorant Garamond", serif;
+    font-size: clamp(64px, 9vw, 130px);
+    font-weight: 400;
+    line-height: 0.85;
+    letter-spacing: -0.045em;
+}
+
+.apparel-page-hero-content > p:last-child {
+    max-width: 520px;
+    margin: 28px 0 0;
+    color: rgba(255, 255, 255, 0.8);
+    font-family: "Manrope", sans-serif;
+    font-size: 13px;
+    line-height: 1.8;
+}
+
+/* ---------------------------------------------------------
+   INTRO
+   --------------------------------------------------------- */
+
+.apparel-page-intro {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 60px;
+    padding: 120px 7vw;
+    border-bottom: 1px solid #d8d2c8;
+}
+
+.apparel-page-intro-label {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    color: #8a837a;
+    font-family: "Manrope", sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+}
+
+.apparel-page-intro-copy {
+    max-width: 720px;
+}
+
+.apparel-page-intro-copy h2 {
+    margin: 0 0 24px;
+    font-family: "Cormorant Garamond", serif;
+    font-size: clamp(44px, 5vw, 72px);
+    font-weight: 400;
+    line-height: 0.95;
+    letter-spacing: -0.035em;
+}
+
+.apparel-page-intro-copy p {
+    max-width: 580px;
+    margin: 0;
+    color: #756f67;
+    font-family: "Manrope", sans-serif;
+    font-size: 13px;
+    line-height: 1.9;
+}
+
+/* ---------------------------------------------------------
+   PRODUCTS / EDITORIAL
+   --------------------------------------------------------- */
+
+.apparel-products {
+    padding: 100px 7vw 120px;
+}
+
+.apparel-products-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 30px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid #d8d2c8;
+}
+
+.apparel-products-header p {
+    margin: 0 0 7px;
+    color: #8a837a;
+    font-family: "Manrope", sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+}
+
+.apparel-products-header h2 {
+    margin: 0;
+    font-family: "Cormorant Garamond", serif;
+    font-size: 52px;
+    font-weight: 400;
+    line-height: 0.9;
+}
+
+.apparel-products-header > span {
+    color: #8a837a;
+    font-family: "Manrope", sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.apparel-editorial {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+    margin-top: 28px;
+}
+
+.apparel-editorial-block {
+    min-height: 580px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 48px;
+    background: #ebe7df;
+}
+
+.apparel-editorial-dark {
+    background: #26352d;
+    color: #ffffff;
+}
+
+.apparel-editorial-block > span {
+    margin-bottom: auto;
+    font-family: "Manrope", sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+}
+
+.apparel-editorial-block h3 {
+    margin: 0 0 18px;
+    font-family: "Cormorant Garamond", serif;
+    font-size: clamp(48px, 5vw, 72px);
+    font-weight: 400;
+    line-height: 0.88;
+    letter-spacing: -0.035em;
+}
+
+.apparel-editorial-block p {
+    max-width: 360px;
+    margin: 0;
+    color: #756f67;
+    font-family: "Manrope", sans-serif;
+    font-size: 11px;
+    line-height: 1.8;
+}
+
+.apparel-editorial-dark p {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+/* ---------------------------------------------------------
+   COMING SOON
+   --------------------------------------------------------- */
+
+.apparel-coming-soon {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 150px 24px;
+    border-top: 1px solid #d8d2c8;
+    text-align: center;
+}
+
+.apparel-coming-eyebrow {
+    margin: 0 0 20px;
+    color: #8a837a;
+    font-family: "Manrope", sans-serif;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+}
+
+.apparel-coming-soon h2 {
+    margin: 0;
+    font-family: "Cormorant Garamond", serif;
+    font-size: clamp(44px, 6vw, 82px);
+    font-weight: 400;
+    line-height: 0.95;
+    letter-spacing: -0.04em;
+}
+
+.apparel-coming-soon > p:not(.apparel-coming-eyebrow) {
+    max-width: 500px;
+    margin: 28px 0 32px;
+    color: #756f67;
+    font-family: "Manrope", sans-serif;
+    font-size: 12px;
+    line-height: 1.8;
+}
+
+.apparel-coming-soon a {
+    color: #111111;
+    font-family: "Manrope", sans-serif;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-decoration: none;
+    border-bottom: 1px solid #111111;
+    padding-bottom: 5px;
+}
+
+/* ---------------------------------------------------------
+   RESPONSIVE
+   --------------------------------------------------------- */
+
+@media (max-width: 800px) {
+    .apparel-page-intro {
+        grid-template-columns: 1fr;
+        gap: 30px;
+        padding: 90px 6vw;
+    }
+
+    .apparel-editorial {
+        grid-template-columns: 1fr;
+    }
+
+    .apparel-editorial-block {
+        min-height: 480px;
+    }
+}
+
+@media (max-width: 600px) {
+    .apparel-page-hero {
+        min-height: 70vh;
+        padding: 60px 24px;
+    }
+
+    .apparel-page-intro {
+        padding: 72px 24px;
+    }
+
+    .apparel-products {
+        padding: 72px 24px 90px;
+    }
+
+    .apparel-editorial-block {
+        min-height: 420px;
+        padding: 32px;
+    }
+
+    .apparel-coming-soon {
+        padding: 90px 24px;
+    }
+}

@@ -4,7 +4,7 @@ from uuid import uuid4
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
-
+from app.schemas import CheckoutRequest, OrderResponse
 from app.core.security import get_current_user
 from app.database.session import get_db
 from app.models import (
@@ -252,3 +252,56 @@ def checkout(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Unable to complete checkout.",
         )
+
+
+@router.get(
+    "",
+    response_model=list[OrderResponse],
+)
+def get_my_orders(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    orders = db.scalars(
+        select(Order)
+        .options(
+            selectinload(Order.items),
+            selectinload(Order.status_history),
+            selectinload(Order.payment),
+        )
+        .where(Order.user_id == current_user.id)
+        .order_by(Order.created_at.desc())
+    ).all()
+
+    return orders
+
+
+@router.get(
+    "/{order_id}",
+    response_model=OrderResponse,
+)
+def get_my_order(
+    order_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    order = db.scalar(
+        select(Order)
+        .options(
+            selectinload(Order.items),
+            selectinload(Order.status_history),
+            selectinload(Order.payment),
+        )
+        .where(
+            Order.id == order_id,
+            Order.user_id == current_user.id,
+        )
+    )
+
+    if not order:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order not found.",
+        )
+
+    return order

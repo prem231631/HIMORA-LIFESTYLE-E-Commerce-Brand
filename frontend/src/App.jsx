@@ -10,7 +10,7 @@ import ProductDetails from "./pages/public/ProductDetails";
 import AdminOrders from "./pages/admin/AdminOrders";
 import Register from "./pages/auth/Register";
 import Login from "./pages/auth/Login";
-
+import AdminOrderDetails from "./pages/admin/AdminOrderDetail";
 
 function HomePage() {
     return (
@@ -51,7 +51,7 @@ function App() {
                 <Route path="/admin/orders" element={<AdminOrders />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/login" element={<Login />} />
-                
+                <Route path="/admin/orders/:orderId" element={<AdminOrderDetails />} />
             </Routes>
         </BrowserRouter>
     );

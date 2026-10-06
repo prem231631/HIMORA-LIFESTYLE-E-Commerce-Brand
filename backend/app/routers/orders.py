@@ -4,7 +4,7 @@ from uuid import uuid4
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
-from app.schemas import CheckoutRequest, OrderCancelRequest, OrderResponse
+from app.schemas import CheckoutRequest, OrderCancelRequest, OrderResponse, OrderStatusUpdateRequest
 from app.core.security import get_current_user, require_admin
 from app.database.session import get_db
 from app.models import (
@@ -457,3 +457,146 @@ def get_all_orders(
     ).all()
 
     return orders
+
+
+@router.patch(
+    "/admin/{order_id}/status",
+    response_model=OrderResponse,
+)
+def update_order_status(
+    order_id: int,
+    status_data: OrderStatusUpdateRequest,
+    admin_user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    allowed_statuses = {
+        "PENDING",
+        "CONFIRMED",
+        "PROCESSING",
+        "SHIPPED",
+        "OUT_FOR_DELIVERY",
+        "DELIVERED",
+    }
+
+    new_status = status_data.status.strip().upper()
+
+    if new_status not in allowed_statuses:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid order status: {new_status}.",
+        )
+
+    order = db.scalar(
+        select(Order)
+        .options(
+            selectinload(Order.items),
+            selectinload(Order.status_history),
+            selectinload(Order.payment),
+        )
+        .where(Order.id == order_id)
+    )
+
+    if not order:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order not found.",
+        )
+
+    if order.status == "CANCELLED":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="A cancelled order cannot be updated.",
+        )
+
+    if order.status == "DELIVERED":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="A delivered order cannot be updated.",
+        )
+
+    valid_transitions = {
+        "PENDING": {"CONFIRMED"},
+        "CONFIRMED": {"PROCESSING"},
+        "PROCESSING": {"SHIPPED"},
+        "SHIPPED": {"OUT_FOR_DELIVERY"},
+        "OUT_FOR_DELIVERY": {"DELIVERED"},
+    }
+
+    if new_status not in valid_transitions.get(order.status, set()):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                f"Cannot change order status from "
+                f"{order.status} to {new_status}."
+            ),
+        )
+
+    try:
+        order.status = new_status
+
+        history_note = (
+            status_data.note.strip()
+            if status_data.note
+            else f"Order status changed to {new_status} by admin."
+        )
+
+        db.add(
+            OrderStatusHistory(
+                order_id=order.id,
+                status=new_status,
+                note=history_note,
+            )
+        )
+
+        # COD payment is marked paid only after delivery.
+        if new_status == "DELIVERED":
+            order.payment_status = "PAID"
+
+            if order.payment:
+                order.payment.payment_status = "PAID"
+                from datetime import datetime, timezone
+                order.payment.paid_at = datetime.now(timezone.utc)
+
+            # Finalize reserved inventory.
+            for order_item in order.items:
+                inventory = db.scalar(
+                    select(Inventory)
+                    .where(
+                        Inventory.variant_id == order_item.variant_id
+                    )
+                    .with_for_update()
+                )
+
+                if inventory:
+                    inventory.reserved_quantity = max(
+                        inventory.reserved_quantity
+                        - order_item.quantity,
+                        0,
+                    )
+
+                    inventory.sold_quantity += order_item.quantity
+
+        db.commit()
+
+        order = db.scalar(
+            select(Order)
+            .options(
+                selectinload(Order.items),
+                selectinload(Order.status_history),
+                selectinload(Order.payment),
+            )
+            .where(Order.id == order.id)
+        )
+
+        return order
+
+    except HTTPException:
+        db.rollback()
+        raise
+
+    except Exception:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to update order status.",
+        )

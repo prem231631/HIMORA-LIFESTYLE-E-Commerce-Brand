@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, Package, RefreshCw } from "lucide-react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import {
+  ArrowLeft,
+  Check,
+  Package,
+  RefreshCw,
+} from "lucide-react";
+import { useNavigate, useParams } from "react-router-dom";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
@@ -12,10 +17,13 @@ function AdminOrderDetail() {
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [statusMessage, setStatusMessage] = useState("");
 
   const fetchOrder = async () => {
     setLoading(true);
     setError("");
+    setStatusMessage("");
 
     try {
       const token = localStorage.getItem("access_token");
@@ -47,6 +55,52 @@ function AdminOrderDetail() {
     }
   };
 
+  const updateStatus = async (newStatus) => {
+    setUpdatingStatus(true);
+    setError("");
+    setStatusMessage("");
+
+    try {
+      const token = localStorage.getItem("access_token");
+
+      if (!token) {
+        throw new Error("Admin authentication token not found.");
+      }
+
+      const response = await fetch(
+        `${API_BASE_URL}/api/orders/admin/${orderId}/status`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            status: newStatus,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.detail || "Failed to update order status."
+        );
+      }
+
+      setOrder(data);
+
+      setStatusMessage(
+        `Order status updated to ${newStatus.replaceAll("_", " ")}.`
+      );
+    } catch (err) {
+      setError(err.message || "Failed to update order status.");
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
+
   useEffect(() => {
     fetchOrder();
   }, [orderId]);
@@ -73,6 +127,39 @@ function AdminOrderDetail() {
     return status.replaceAll("_", " ");
   };
 
+  const getStatusClass = (status) => {
+    return `admin-order-status admin-order-status-${status
+      ?.toLowerCase()
+      .replaceAll("_", "-")}`;
+  };
+
+  const getNextStatus = () => {
+    const statusFlow = {
+      PENDING: {
+        status: "CONFIRMED",
+        label: "CONFIRM ORDER",
+      },
+      CONFIRMED: {
+        status: "PROCESSING",
+        label: "START PROCESSING",
+      },
+      PROCESSING: {
+        status: "SHIPPED",
+        label: "MARK AS SHIPPED",
+      },
+      SHIPPED: {
+        status: "OUT_FOR_DELIVERY",
+        label: "OUT FOR DELIVERY",
+      },
+      OUT_FOR_DELIVERY: {
+        status: "DELIVERED",
+        label: "MARK AS DELIVERED",
+      },
+    };
+
+    return statusFlow[order?.status] || null;
+  };
+
   if (loading) {
     return (
       <div className="admin-order-detail-page">
@@ -83,7 +170,7 @@ function AdminOrderDetail() {
     );
   }
 
-  if (error) {
+  if (error && !order) {
     return (
       <div className="admin-order-detail-page">
         <div className="admin-order-detail-error">
@@ -106,6 +193,8 @@ function AdminOrderDetail() {
     return null;
   }
 
+  const nextStatus = getNextStatus();
+
   return (
     <div className="admin-order-detail-page">
       <div className="admin-order-detail-topbar">
@@ -122,11 +211,21 @@ function AdminOrderDetail() {
           type="button"
           className="admin-order-refresh"
           onClick={fetchOrder}
+          disabled={loading || updatingStatus}
         >
-          <RefreshCw size={16} />
+          <RefreshCw
+            size={16}
+            className={loading ? "admin-order-spin" : ""}
+          />
           Refresh
         </button>
       </div>
+
+      {error && (
+        <div className="admin-order-inline-error">
+          {error}
+        </div>
+      )}
 
       <header className="admin-order-detail-header">
         <div>
@@ -141,11 +240,7 @@ function AdminOrderDetail() {
           </p>
         </div>
 
-        <span
-          className={`admin-order-status admin-order-status-${order.status
-            ?.toLowerCase()
-            .replaceAll("_", "-")}`}
-        >
+        <span className={getStatusClass(order.status)}>
           {formatStatus(order.status)}
         </span>
       </header>
@@ -175,9 +270,7 @@ function AdminOrderDetail() {
                   <div className="admin-order-item-info">
                     <h3>{item.product_name}</h3>
 
-                    <p>
-                      SKU: {item.sku}
-                    </p>
+                    <p>SKU: {item.sku}</p>
 
                     {(item.size || item.color) && (
                       <p>
@@ -202,7 +295,9 @@ function AdminOrderDetail() {
             <div className="admin-order-totals">
               <div>
                 <span>Subtotal</span>
-                <strong>{formatCurrency(order.subtotal)}</strong>
+                <strong>
+                  {formatCurrency(order.subtotal)}
+                </strong>
               </div>
 
               <div>
@@ -243,7 +338,8 @@ function AdminOrderDetail() {
                     </strong>
 
                     <p>
-                      {history.note || "Order status updated."}
+                      {history.note ||
+                        "Order status updated."}
                     </p>
 
                     <small>
@@ -257,6 +353,59 @@ function AdminOrderDetail() {
         </section>
 
         <aside className="admin-order-detail-sidebar">
+          {/* FULFILLMENT */}
+          <div className="admin-order-panel">
+            <div className="admin-order-panel-heading">
+              <div>
+                <span>FULFILLMENT</span>
+                <h2>Update status</h2>
+              </div>
+
+              <Check size={20} />
+            </div>
+
+            <div className="admin-order-status-control">
+              <p>
+                Current status:{" "}
+                <strong>{formatStatus(order.status)}</strong>
+              </p>
+
+              {nextStatus && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    updateStatus(nextStatus.status)
+                  }
+                  disabled={updatingStatus}
+                  className="admin-order-status-update"
+                >
+                  {updatingStatus
+                    ? "UPDATING..."
+                    : nextStatus.label}
+                </button>
+              )}
+
+              {order.status === "DELIVERED" && (
+                <p className="admin-order-status-complete">
+                  This order has been delivered.
+                </p>
+              )}
+
+              {order.status === "CANCELLED" && (
+                <p className="admin-order-status-complete">
+                  This order has been cancelled.
+                </p>
+              )}
+
+              {statusMessage && (
+                <p className="admin-order-status-message">
+                  {statusMessage}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* CUSTOMER */}
           <div className="admin-order-panel">
             <div className="admin-order-panel-heading">
               <div>
@@ -285,6 +434,7 @@ function AdminOrderDetail() {
             </div>
           </div>
 
+          {/* DELIVERY */}
           <div className="admin-order-panel">
             <div className="admin-order-panel-heading">
               <div>
@@ -296,7 +446,9 @@ function AdminOrderDetail() {
             <div className="admin-order-information">
               <div>
                 <span>Name</span>
-                <strong>{order.shipping_full_name}</strong>
+                <strong>
+                  {order.shipping_full_name}
+                </strong>
               </div>
 
               <div>
@@ -341,6 +493,7 @@ function AdminOrderDetail() {
             </div>
           </div>
 
+          {/* PAYMENT */}
           <div className="admin-order-panel">
             <div className="admin-order-panel-heading">
               <div>
@@ -378,6 +531,7 @@ function AdminOrderDetail() {
             </div>
           </div>
 
+          {/* NOTES */}
           {order.notes && (
             <div className="admin-order-panel">
               <div className="admin-order-panel-heading">

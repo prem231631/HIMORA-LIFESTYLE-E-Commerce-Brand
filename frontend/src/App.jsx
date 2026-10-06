@@ -6,7 +6,7 @@ import NewCollection from "./components/layout/NewCollection";
 import EyewearSection from "./components/layout/EyewearSection";
 import FeaturedProducts from "./components/layout/FeaturedProducts";
 import Collections from "./pages/public/Collections";
-
+import Eyewear from "./pages/public/Eyewear";
 
 import ProductDetails from "./pages/public/ProductDetails";
 
@@ -49,6 +49,14 @@ function App() {
                         <Collections />
                     </>
                 } />
+
+                {/* EYEWEAR */}
+                <Route path="/eyewear" element={
+                    <>
+                        <Navbar />
+                        <Eyewear />
+                    </>
+                } />    
 
                 {/* PRODUCT DETAILS */}
                 <Route

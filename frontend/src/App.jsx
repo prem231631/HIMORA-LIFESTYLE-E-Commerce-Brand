@@ -8,6 +8,7 @@ import FeaturedProducts from "./components/layout/FeaturedProducts";
 import Collections from "./pages/public/Collections";
 import Eyewear from "./pages/public/Eyewear";
 import Apparel from "./pages/public/Apparel";
+import Accessories from "./pages/public/Accessories";
 
 import ProductDetails from "./pages/public/ProductDetails";
 
@@ -64,6 +65,14 @@ function App() {
                     <>
                         <Navbar />
                         <Apparel />
+                    </>
+                } />
+
+                {/* ACCESSORIES */}
+                <Route path="/accessories" element={
+                    <>
+                        <Navbar />
+                        <Accessories />
                     </>
                 } />
 

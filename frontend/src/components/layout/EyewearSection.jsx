@@ -1,12 +1,18 @@
+import { Link } from "react-router-dom";
+
 import "./EyewearSection.css";
+
 import sunglass1 from "../../assets/Sunglasses/sunglass1.png";
 import sunglass2 from "../../assets/Sunglasses/sunglass2.png";
+
 function EyewearSection() {
     return (
         <section className="eyewear-section">
+
             <div className="container">
 
                 <div className="eyewear-intro">
+
                     <div>
                         <p className="eyewear-eyebrow">
                             02 — Eyewear
@@ -14,6 +20,7 @@ function EyewearSection() {
                     </div>
 
                     <div className="eyewear-intro-copy">
+
                         <h2 className="display-text">
                             Designed to
                             <br />
@@ -26,20 +33,22 @@ function EyewearSection() {
                             of individuality.
                         </p>
 
-                        <a
-                            href="/eyewear"
+                        <Link
+                            to="/eyewear"
                             className="editorial-link"
                         >
                             Explore eyewear
                             <span>→</span>
-                        </a>
+                        </Link>
+
                     </div>
+
                 </div>
 
                 <div className="eyewear-grid">
 
-                    <a
-                        href="/eyewear"
+                    <Link
+                        to="/eyewear"
                         className="eyewear-image eyewear-image-large"
                     >
                         <img
@@ -48,13 +57,20 @@ function EyewearSection() {
                         />
 
                         <div className="eyewear-image-label">
-                            <span>HIMORA / E-01</span>
-                            <span>Explore →</span>
-                        </div>
-                    </a>
 
-                    <a
-                        href="/eyewear"
+                            <span>
+                                HIMORA / E-01
+                            </span>
+
+                            <span>
+                                Explore →
+                            </span>
+
+                        </div>
+                    </Link>
+
+                    <Link
+                        to="/eyewear"
                         className="eyewear-image eyewear-image-small"
                     >
                         <img
@@ -63,14 +79,22 @@ function EyewearSection() {
                         />
 
                         <div className="eyewear-image-label">
-                            <span>HIMORA / E-02</span>
-                            <span>View →</span>
+
+                            <span>
+                                HIMORA / E-02
+                            </span>
+
+                            <span>
+                                View →
+                            </span>
+
                         </div>
-                    </a>
+                    </Link>
 
                 </div>
 
             </div>
+
         </section>
     );
 }

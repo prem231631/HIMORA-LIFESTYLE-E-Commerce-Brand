@@ -1,17 +1,46 @@
-import { Search, UserRound, ShoppingBag, Menu, X } from "lucide-react";
+import {
+    Search,
+    UserRound,
+    ShoppingBag,
+    Menu,
+    X,
+} from "lucide-react";
 import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+
 import "./Navbar.css";
 
 function Navbar() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+    const navigate = useNavigate();
+
     const closeMobileMenu = () => {
         setMobileMenuOpen(false);
+    };
+
+    const handleAccountClick = () => {
+        const token = localStorage.getItem("access_token");
+
+        if (token) {
+            const user = JSON.parse(
+                localStorage.getItem("user") || "null"
+            );
+
+            if (user?.role === "admin") {
+                navigate("/admin/orders");
+            } else {
+                navigate("/account");
+            }
+        } else {
+            navigate("/login");
+        }
     };
 
     return (
         <header className="site-header">
             <nav className="navbar container">
+
                 {/* Mobile Menu Button */}
                 <button
                     className="navbar-mobile-toggle"
@@ -23,84 +52,181 @@ function Navbar() {
                 </button>
 
                 {/* Brand */}
-                <a href="/" className="navbar-brand" aria-label="HIMORA Lifestyle home">
+                <Link
+                    to="/"
+                    className="navbar-brand"
+                    aria-label="HIMORA Lifestyle home"
+                >
                     HIMORA
-                </a>
+                </Link>
 
                 {/* Desktop Navigation */}
                 <div className="navbar-links">
-                    <a href="/">New</a>
-                    <a href="/collections">Collections</a>
-                    <a href="/eyewear">Eyewear</a>
-                    <a href="/apparel">Apparel</a>
-                    <a href="/accessories">Accessories</a>
+                    <Link to="/">New</Link>
+
+                    <Link to="/collections">
+                        Collections
+                    </Link>
+
+                    <Link to="/eyewear">
+                        Eyewear
+                    </Link>
+
+                    <Link to="/apparel">
+                        Apparel
+                    </Link>
+
+                    <Link to="/accessories">
+                        Accessories
+                    </Link>
                 </div>
 
                 {/* Actions */}
                 <div className="navbar-actions">
-                    <button type="button" aria-label="Search">
-                        <Search size={19} strokeWidth={1.5} />
+
+                    {/* Search */}
+                    <button
+                        type="button"
+                        aria-label="Search"
+                        onClick={() => navigate("/search")}
+                    >
+                        <Search
+                            size={19}
+                            strokeWidth={1.5}
+                        />
                     </button>
 
-                    <button type="button" aria-label="Account">
-                        <UserRound size={19} strokeWidth={1.5} />
+                    {/* Account */}
+                    <button
+                        type="button"
+                        aria-label="Account"
+                        onClick={handleAccountClick}
+                    >
+                        <UserRound
+                            size={19}
+                            strokeWidth={1.5}
+                        />
                     </button>
 
+                    {/* Shopping Bag */}
                     <button
                         type="button"
                         className="navbar-bag"
                         aria-label="Shopping bag"
+                        onClick={() => navigate("/cart")}
                     >
-                        <ShoppingBag size={19} strokeWidth={1.5} />
+                        <ShoppingBag
+                            size={19}
+                            strokeWidth={1.5}
+                        />
+
                         <span>0</span>
                     </button>
+
                 </div>
             </nav>
 
             {/* Mobile Navigation */}
             <div
                 className={`mobile-menu ${
-                    mobileMenuOpen ? "mobile-menu-open" : ""
+                    mobileMenuOpen
+                        ? "mobile-menu-open"
+                        : ""
                 }`}
             >
+
                 <div className="mobile-menu-header">
-                    <span className="mobile-menu-title">MENU</span>
+
+                    <span className="mobile-menu-title">
+                        MENU
+                    </span>
 
                     <button
                         type="button"
                         aria-label="Close menu"
                         onClick={closeMobileMenu}
                     >
-                        <X size={21} strokeWidth={1.5} />
+                        <X
+                            size={21}
+                            strokeWidth={1.5}
+                        />
                     </button>
+
                 </div>
 
                 <div className="mobile-menu-links">
-                    <a href="/" onClick={closeMobileMenu}>
+
+                    <Link
+                        to="/"
+                        onClick={closeMobileMenu}
+                    >
                         New
-                    </a>
+                    </Link>
 
-                    <a href="/collections" onClick={closeMobileMenu}>
+                    <Link
+                        to="/collections"
+                        onClick={closeMobileMenu}
+                    >
                         Collections
-                    </a>
+                    </Link>
 
-                    <a href="/eyewear" onClick={closeMobileMenu}>
+                    <Link
+                        to="/eyewear"
+                        onClick={closeMobileMenu}
+                    >
                         Eyewear
-                    </a>
+                    </Link>
 
-                    <a href="/apparel" onClick={closeMobileMenu}>
+                    <Link
+                        to="/apparel"
+                        onClick={closeMobileMenu}
+                    >
                         Apparel
-                    </a>
+                    </Link>
 
-                    <a href="/accessories" onClick={closeMobileMenu}>
+                    <Link
+                        to="/accessories"
+                        onClick={closeMobileMenu}
+                    >
                         Accessories
-                    </a>
+                    </Link>
+
                 </div>
 
                 <div className="mobile-menu-footer">
-                    <a href="/account">Account</a>
-                    <a href="/search">Search</a>
+
+                    <button
+                        type="button"
+                        onClick={() => {
+                            closeMobileMenu();
+                            handleAccountClick();
+                        }}
+                    >
+                        Account
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={() => {
+                            closeMobileMenu();
+                            navigate("/search");
+                        }}
+                    >
+                        Search
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={() => {
+                            closeMobileMenu();
+                            navigate("/cart");
+                        }}
+                    >
+                        Shopping Bag
+                    </button>
+
                 </div>
+
             </div>
         </header>
     );

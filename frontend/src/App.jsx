@@ -8,6 +8,7 @@ import FeaturedProducts from "./components/layout/FeaturedProducts";
 
 import ProductDetails from "./pages/public/ProductDetails";
 import AdminOrders from "./pages/admin/AdminOrders";
+import Register from "./pages/auth/Register";
 
 function HomePage() {
     return (
@@ -46,7 +47,8 @@ function App() {
                 />
 
                 <Route path="/admin/orders" element={<AdminOrders />} />
-
+                <Route path="/register" element={<Register />} />
+                
             </Routes>
         </BrowserRouter>
     );

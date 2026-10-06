@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 from app.schemas import CheckoutRequest, OrderCancelRequest, OrderResponse
-from app.core.security import get_current_user
+from app.core.security import get_current_user, require_admin
 from app.database.session import get_db
 from app.models import (
     Address,
@@ -436,3 +436,24 @@ def cancel_order(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Unable to cancel the order.",
         )
+
+
+@router.get(
+    "/admin/all",
+    response_model=list[OrderResponse],
+)
+def get_all_orders(
+    admin_user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    orders = db.scalars(
+        select(Order)
+        .options(
+            selectinload(Order.items),
+            selectinload(Order.status_history),
+            selectinload(Order.payment),
+        )
+        .order_by(Order.created_at.desc())
+    ).all()
+
+    return orders

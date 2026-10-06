@@ -4,7 +4,7 @@ from uuid import uuid4
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
-from app.schemas import CheckoutRequest, OrderResponse
+from app.schemas import CheckoutRequest, OrderCancelRequest, OrderResponse
 from app.core.security import get_current_user
 from app.database.session import get_db
 from app.models import (
@@ -305,3 +305,134 @@ def get_my_order(
         )
 
     return order
+
+
+@router.post(
+    "/{order_id}/cancel",
+    response_model=OrderResponse,
+)
+def cancel_order(
+    order_id: int,
+    cancel_data: OrderCancelRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    # ---------------------------------------------------------
+    # 1. Find the customer's order
+    # ---------------------------------------------------------
+    order = db.scalar(
+        select(Order)
+        .options(
+            selectinload(Order.items),
+            selectinload(Order.status_history),
+            selectinload(Order.payment),
+        )
+        .where(
+            Order.id == order_id,
+            Order.user_id == current_user.id,
+        )
+    )
+
+    if not order:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order not found.",
+        )
+
+    # ---------------------------------------------------------
+    # 2. Check whether cancellation is allowed
+    # ---------------------------------------------------------
+    cancellable_statuses = {
+        "PENDING",
+        "CONFIRMED",
+    }
+
+    if order.status not in cancellable_statuses:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                f"Order cannot be cancelled while its status "
+                f"is {order.status}."
+            ),
+        )
+
+    try:
+        # -----------------------------------------------------
+        # 3. Release reserved inventory
+        # -----------------------------------------------------
+        for order_item in order.items:
+            inventory = db.scalar(
+                select(Inventory)
+                .where(
+                    Inventory.variant_id == order_item.variant_id,
+                )
+                .with_for_update()
+            )
+
+            if inventory:
+                inventory.reserved_quantity = max(
+                    inventory.reserved_quantity - order_item.quantity,
+                    0,
+                )
+
+        # -----------------------------------------------------
+        # 4. Update order status
+        # -----------------------------------------------------
+        order.status = "CANCELLED"
+
+        # -----------------------------------------------------
+        # 5. Add status history
+        # -----------------------------------------------------
+        reason = cancel_data.reason.strip() if cancel_data.reason else None
+
+        history_note = "Order cancelled by customer."
+
+        if reason:
+            history_note += f" Reason: {reason}"
+
+        status_history = OrderStatusHistory(
+            order_id=order.id,
+            status="CANCELLED",
+            note=history_note,
+        )
+
+        db.add(status_history)
+
+        # -----------------------------------------------------
+        # 6. COD payment remains pending
+        # -----------------------------------------------------
+        if order.payment:
+            order.payment.payment_status = "CANCELLED"
+
+        order.payment_status = "CANCELLED"
+
+        # -----------------------------------------------------
+        # 7. Commit cancellation
+        # -----------------------------------------------------
+        db.commit()
+
+        # -----------------------------------------------------
+        # 8. Reload complete order
+        # -----------------------------------------------------
+        order = db.scalar(
+            select(Order)
+            .options(
+                selectinload(Order.items),
+                selectinload(Order.status_history),
+                selectinload(Order.payment),
+            )
+            .where(Order.id == order.id)
+        )
+
+        return order
+
+    except HTTPException:
+        db.rollback()
+        raise
+
+    except Exception:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to cancel the order.",
+        )

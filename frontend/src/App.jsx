@@ -5,6 +5,8 @@ import Hero from "./components/layout/Hero";
 import NewCollection from "./components/layout/NewCollection";
 import EyewearSection from "./components/layout/EyewearSection";
 import FeaturedProducts from "./components/layout/FeaturedProducts";
+import Collections from "./pages/public/Collections";
+
 
 import ProductDetails from "./pages/public/ProductDetails";
 
@@ -39,6 +41,14 @@ function App() {
                     path="/"
                     element={<HomePage />}
                 />
+                
+                {/* COLLECTIONS */}
+                <Route path="/collections" element={
+                    <>
+                        <Navbar />
+                        <Collections />
+                    </>
+                } />
 
                 {/* PRODUCT DETAILS */}
                 <Route

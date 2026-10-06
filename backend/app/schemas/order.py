@@ -90,3 +90,10 @@ class OrderStatusUpdateRequest(BaseModel):
         default=None,
         max_length=500,
     )
+
+
+class AdminOrderResponse(OrderResponse):
+    customer_id: int
+    customer_name: str
+    customer_email: str
+    customer_phone: str | None

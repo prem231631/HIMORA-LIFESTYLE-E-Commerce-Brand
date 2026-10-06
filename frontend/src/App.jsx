@@ -7,7 +7,7 @@ import EyewearSection from "./components/layout/EyewearSection";
 import FeaturedProducts from "./components/layout/FeaturedProducts";
 
 import ProductDetails from "./pages/public/ProductDetails";
-
+import AdminOrders from "./pages/admin/AdminOrders";
 
 function HomePage() {
     return (
@@ -44,6 +44,8 @@ function App() {
                         </>
                     }
                 />
+
+                <Route path="/admin/orders" element={<AdminOrders />} />
 
             </Routes>
         </BrowserRouter>

@@ -73,3 +73,9 @@ class OrderResponse(BaseModel):
     payment: PaymentResponse | None
 
     model_config = ConfigDict(from_attributes=True)
+
+class OrderCancelRequest(BaseModel):
+    reason: str | None = Field(
+        default=None,
+        max_length=500,
+    )

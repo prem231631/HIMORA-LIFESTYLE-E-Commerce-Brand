@@ -1,4 +1,3 @@
-
 import { useCallback, useEffect, useState } from "react";
 import { ArrowRight, Minus, Plus, Trash2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
@@ -8,11 +7,38 @@ import "./Cart.css";
 const API_BASE_URL =
     import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
+const FALLBACK_IMAGE =
+    "https://images.unsplash.com/photo-1511499767150-a48a237f0083";
+
 function formatPrice(price) {
     return `NPR ${Number(price || 0).toLocaleString("en-IN", {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
     })}`;
+}
+
+async function readResponse(response, defaultMessage) {
+    let data = null;
+
+    try {
+        data = await response.json();
+    } catch {
+        // The response may not contain JSON.
+    }
+
+    if (!response.ok) {
+        const detail = data?.detail;
+
+        const message = Array.isArray(detail)
+            ? detail.map((item) => item.msg).filter(Boolean).join(", ")
+            : typeof detail === "string"
+              ? detail
+              : defaultMessage;
+
+        throw new Error(message);
+    }
+
+    return data;
 }
 
 function Cart() {
@@ -45,15 +71,23 @@ function Cart() {
                 localStorage.removeItem("access_token");
                 localStorage.removeItem("user");
                 localStorage.removeItem("isAdmin");
-                navigate("/login");
+                localStorage.removeItem("userName");
+
+                window.dispatchEvent(new Event("himora-auth-updated"));
+
+                navigate("/login", {
+                    replace: true,
+                    state: { from: "/cart" },
+                });
+
                 return;
             }
 
-            if (!response.ok) {
-                throw new Error("Unable to load your shopping bag.");
-            }
+            const data = await readResponse(
+                response,
+                "Unable to load your shopping bag."
+            );
 
-            const data = await response.json();
             setCart(data);
         } catch (err) {
             setError(err.message || "Something went wrong.");
@@ -81,7 +115,9 @@ function Cart() {
         const token = localStorage.getItem("access_token");
 
         if (!token) {
-            navigate("/login");
+            navigate("/login", {
+                state: { from: "/cart" },
+            });
             return;
         }
 
@@ -101,15 +137,23 @@ function Cart() {
                 }
             );
 
-            const data = await response.json();
+            if (response.status === 401) {
+                localStorage.removeItem("access_token");
+                localStorage.removeItem("user");
+                localStorage.removeItem("isAdmin");
+                localStorage.removeItem("userName");
 
-            if (!response.ok) {
-                throw new Error(
-                    typeof data.detail === "string"
-                        ? data.detail
-                        : "Unable to update quantity."
-                );
+                navigate("/login", {
+                    state: { from: "/cart" },
+                });
+
+                return;
             }
+
+            const data = await readResponse(
+                response,
+                "Unable to update quantity."
+            );
 
             setCart(data);
             window.dispatchEvent(new Event("himora-cart-updated"));
@@ -121,10 +165,16 @@ function Cart() {
     };
 
     const removeItem = async (itemId) => {
+        if (updatingItem !== null) {
+            return;
+        }
+
         const token = localStorage.getItem("access_token");
 
         if (!token) {
-            navigate("/login");
+            navigate("/login", {
+                state: { from: "/cart" },
+            });
             return;
         }
 
@@ -142,15 +192,23 @@ function Cart() {
                 }
             );
 
-            const data = await response.json();
+            if (response.status === 401) {
+                localStorage.removeItem("access_token");
+                localStorage.removeItem("user");
+                localStorage.removeItem("isAdmin");
+                localStorage.removeItem("userName");
 
-            if (!response.ok) {
-                throw new Error(
-                    typeof data.detail === "string"
-                        ? data.detail
-                        : "Unable to remove this item."
-                );
+                navigate("/login", {
+                    state: { from: "/cart" },
+                });
+
+                return;
             }
+
+            const data = await readResponse(
+                response,
+                "Unable to remove this item."
+            );
 
             setCart(data);
             window.dispatchEvent(new Event("himora-cart-updated"));
@@ -178,9 +236,15 @@ function Cart() {
                 <div className="cart-message">
                     <p>HIMORA / YOUR BAG</p>
                     <h1>Your bag awaits.</h1>
-                    <p>Sign in to view the items in your shopping bag.</p>
+                    <p>
+                        Sign in to view the items in your shopping bag.
+                    </p>
 
-                    <Link to="/login" className="cart-primary-link">
+                    <Link
+                        to="/login"
+                        state={{ from: "/cart" }}
+                        className="cart-primary-link"
+                    >
                         Sign in to your account <ArrowRight size={16} />
                     </Link>
                 </div>
@@ -228,21 +292,41 @@ function Cart() {
                                 the Himalayas.
                             </p>
 
-                            <Link to="/collections" className="cart-primary-link">
-                                Explore the collection <ArrowRight size={16} />
+                            <Link
+                                to="/collections"
+                                className="cart-primary-link"
+                            >
+                                Explore the collection{" "}
+                                <ArrowRight size={16} />
                             </Link>
                         </div>
                     ) : (
                         items.map((item) => (
                             <article className="cart-item" key={item.id}>
-                                <div className="cart-item-image">
-                                    <div className="cart-image-placeholder">
-                                        HIMORA
-                                    </div>
-                                </div>
+                                <Link
+                                    to={`/products/${item.product_slug || item.product_id}`}
+                                    className="cart-item-image"
+                                    aria-label={`View ${item.product_name}`}
+                                >
+                                    <img
+                                        src={
+                                            item.image_url ||
+                                            FALLBACK_IMAGE
+                                        }
+                                        alt={item.product_name}
+                                        onError={(event) => {
+                                            event.currentTarget.onerror = null;
+                                            event.currentTarget.src =
+                                                FALLBACK_IMAGE;
+                                        }}
+                                    />
+                                </Link>
 
                                 <div className="cart-item-details">
-                                    <p className="cart-item-sku">{item.sku}</p>
+                                    <p className="cart-item-sku">
+                                        {item.sku}
+                                    </p>
+
                                     <h2>{item.product_name}</h2>
 
                                     <p>
@@ -305,7 +389,8 @@ function Cart() {
 
                                 <div className="cart-item-price">
                                     {formatPrice(
-                                        Number(item.unit_price) * item.quantity
+                                        Number(item.unit_price) *
+                                            item.quantity
                                     )}
                                 </div>
                             </article>
@@ -314,7 +399,9 @@ function Cart() {
                 </div>
 
                 <aside className="cart-summary">
-                    <p className="cart-summary-eyebrow">ORDER SUMMARY</p>
+                    <p className="cart-summary-eyebrow">
+                        ORDER SUMMARY
+                    </p>
 
                     <div className="cart-summary-row">
                         <span>Subtotal</span>
@@ -334,7 +421,10 @@ function Cart() {
                     <button
                         type="button"
                         className="cart-checkout-button"
-                        disabled={items.length === 0 || updatingItem !== null}
+                        disabled={
+                            items.length === 0 ||
+                            updatingItem !== null
+                        }
                         onClick={() => navigate("/checkout")}
                     >
                         Continue to checkout <ArrowRight size={16} />
@@ -344,7 +434,10 @@ function Cart() {
                         Secure checkout · Cash on delivery
                     </p>
 
-                    <Link to="/collections" className="cart-continue-shopping">
+                    <Link
+                        to="/collections"
+                        className="cart-continue-shopping"
+                    >
                         Continue shopping
                     </Link>
                 </aside>

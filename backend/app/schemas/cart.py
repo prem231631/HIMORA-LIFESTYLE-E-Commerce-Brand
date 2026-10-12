@@ -20,6 +20,8 @@ class CartItemResponse(BaseModel):
     sku: str
     product_id: int
     product_name: str
+    product_slug: str | None = None
+    image_url: str | None = None
     unit_price: Decimal
 
     size: str | None = None

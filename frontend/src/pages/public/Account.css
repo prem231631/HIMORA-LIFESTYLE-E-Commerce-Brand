@@ -1,0 +1,498 @@
+.account-page {
+    min-height: 75vh;
+    background: #f7f5f0;
+    color: #111111;
+    padding-bottom: 100px;
+    font-family: "Manrope", sans-serif;
+}
+
+.account-page * {
+    box-sizing: border-box;
+}
+
+.account-hero {
+    padding: 35px 8% 68px;
+    background: #f0ede6;
+    border-bottom: 1px solid #ded9d0;
+}
+
+.account-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    color: #827b71;
+    margin-bottom: 55px;
+}
+
+.account-breadcrumb a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.account-breadcrumb a:hover {
+    color: #111111;
+}
+
+.account-eyebrow {
+    margin: 0 0 13px;
+    color: #81796e;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    font-weight: 600;
+}
+
+.account-hero h1 {
+    margin: 0;
+    font-family: "Cormorant Garamond", serif;
+    font-weight: 400;
+    font-size: clamp(42px, 5.5vw, 72px);
+    line-height: 0.98;
+    letter-spacing: -0.035em;
+}
+
+.account-hero h1 span {
+    color: #71695e;
+    overflow-wrap: anywhere;
+}
+
+.account-hero-description {
+    max-width: 440px;
+    margin: 23px 0 0;
+    color: #6e685f;
+    font-size: 13px;
+    line-height: 1.9;
+}
+
+.account-content {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 0 32px;
+}
+
+.account-profile-strip {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 28px 0;
+    border-bottom: 1px solid #ded9d0;
+}
+
+.account-avatar,
+.account-shortcut-icon,
+.account-order-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background: #eeebe4;
+    color: #25231f;
+}
+
+.account-avatar {
+    width: 58px;
+    height: 58px;
+    border: 1px solid #ded9d0;
+    border-radius: 50%;
+}
+
+.account-profile-info {
+    min-width: 0;
+}
+
+.account-profile-info > span {
+    color: #8a8277;
+    font-size: 9px;
+    letter-spacing: 0.17em;
+}
+
+.account-profile-info h2 {
+    margin: 5px 0 3px;
+    font-family: "Cormorant Garamond", serif;
+    font-size: 25px;
+    font-weight: 500;
+}
+
+.account-profile-info p {
+    margin: 0;
+    color: #777066;
+    font-size: 12px;
+    overflow-wrap: anywhere;
+}
+
+.account-member-label {
+    margin-left: auto;
+    align-self: center;
+    padding: 7px 11px;
+    border: 1px solid #c9c2b7;
+    color: #71695e;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+}
+
+.account-section-heading,
+.account-orders-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: end;
+}
+
+.account-section-heading {
+    margin: 50px 0 24px;
+}
+
+.account-section-heading h2,
+.account-orders-heading h2 {
+    margin: 0;
+    font-family: "Cormorant Garamond", serif;
+    font-size: 37px;
+    line-height: 1;
+    font-weight: 500;
+}
+
+.account-shortcuts {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    border-top: 1px solid #dcd6cc;
+    border-bottom: 1px solid #dcd6cc;
+}
+
+.account-shortcut {
+    min-width: 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    padding: 27px 20px;
+    color: #111111;
+    text-decoration: none;
+    border-right: 1px solid #dcd6cc;
+    transition: background 180ms ease;
+}
+
+.account-shortcut:first-child {
+    padding-left: 0;
+}
+
+.account-shortcut:last-child {
+    border-right: 0;
+    padding-right: 0;
+}
+
+.account-shortcut:hover {
+    background: rgba(216, 210, 200, 0.2);
+}
+
+.account-shortcut-icon {
+    width: 43px;
+    height: 43px;
+}
+
+.account-shortcut > div:nth-child(2) {
+    flex: 1;
+    min-width: 0;
+}
+
+.account-shortcut h3 {
+    margin: 2px 0 8px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.account-shortcut p {
+    margin: 0;
+    color: #797267;
+    font-size: 11px;
+    line-height: 1.8;
+}
+
+.account-shortcut-arrow {
+    flex-shrink: 0;
+    margin-top: 3px;
+    color: #81796e;
+}
+
+.account-shortcut-static {
+    cursor: default;
+}
+
+.account-coming-soon {
+    display: inline-block;
+    margin-top: 12px;
+    color: #8b8276;
+    font-size: 8px;
+    letter-spacing: 0.08em;
+    line-height: 1.6;
+}
+
+.account-orders-section {
+    margin-top: 68px;
+}
+
+.account-orders-heading {
+    margin-bottom: 24px;
+}
+
+.account-view-all,
+.account-shop-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    color: #28251f;
+    text-decoration: none;
+    font-size: 11px;
+}
+
+.account-view-all:hover,
+.account-shop-link:hover {
+    color: #83796c;
+}
+
+.account-order-list {
+    border-top: 1px solid #dcd6cc;
+}
+
+.account-order-row {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    min-width: 0;
+    padding: 22px 4px;
+    border-bottom: 1px solid #dcd6cc;
+    color: #111111;
+    text-decoration: none;
+    transition: background 180ms ease;
+}
+
+.account-order-row:hover {
+    background: rgba(216, 210, 200, 0.2);
+}
+
+.account-order-icon {
+    width: 48px;
+    height: 48px;
+}
+
+.account-order-main {
+    flex: 1;
+    min-width: 0;
+}
+
+.account-order-main h3 {
+    margin: 0 0 7px;
+    font-size: 12px;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.account-order-main p {
+    margin: 0;
+    color: #81796e;
+    font-size: 11px;
+}
+
+.account-order-total {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 115px;
+}
+
+.account-order-total span {
+    color: #81796e;
+    font-size: 10px;
+}
+
+.account-order-total strong {
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.account-order-status {
+    display: inline-block;
+    padding: 7px 9px;
+    border: 1px solid #d4cec3;
+    color: #635c52;
+    font-size: 9px;
+    letter-spacing: 0.05em;
+    text-align: center;
+}
+
+.account-order-status.status-delivered {
+    border-color: #aab9a8;
+    color: #405a42;
+}
+
+.account-order-status.status-cancelled {
+    border-color: #d7b9b2;
+    color: #8a4940;
+}
+
+.account-order-arrow {
+    flex-shrink: 0;
+    color: #82796e;
+}
+
+.account-state,
+.account-empty-orders {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 55px 22px;
+    border-top: 1px solid #dcd6cc;
+    border-bottom: 1px solid #dcd6cc;
+    color: #736c62;
+}
+
+.account-state p,
+.account-empty-orders p {
+    font-size: 12px;
+    line-height: 1.9;
+}
+
+.account-state-error {
+    color: #8a4940;
+}
+
+.account-state-error button {
+    margin-top: 8px;
+    padding: 10px 18px;
+    border: 1px solid #c9c2b7;
+    background: transparent;
+    color: #111111;
+    cursor: pointer;
+}
+
+.account-empty-orders h3 {
+    margin: 20px 0 0;
+    color: #171613;
+    font-family: "Cormorant Garamond", serif;
+    font-size: 28px;
+    font-weight: 500;
+}
+
+.account-empty-orders p {
+    max-width: 390px;
+    margin: 8px 0 20px;
+}
+
+.account-shop-link {
+    padding-bottom: 5px;
+    border-bottom: 1px solid #9c9387;
+}
+
+.account-spinner {
+    animation: account-spin 1s linear infinite;
+}
+
+@keyframes account-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (max-width: 900px) {
+    .account-shortcuts {
+        grid-template-columns: 1fr;
+    }
+
+    .account-shortcut,
+    .account-shortcut:first-child,
+    .account-shortcut:last-child {
+        padding: 20px 0;
+        border-right: 0;
+        border-bottom: 1px solid #dcd6cc;
+    }
+
+    .account-shortcut:last-child {
+        border-bottom: 0;
+    }
+
+    .account-order-row {
+        gap: 13px;
+    }
+}
+
+@media (max-width: 600px) {
+    .account-hero {
+        padding: 25px 22px 48px;
+    }
+
+    .account-breadcrumb {
+        margin-bottom: 43px;
+    }
+
+    .account-content {
+        padding: 0 22px;
+    }
+
+    .account-profile-strip {
+        gap: 12px;
+        padding: 23px 0;
+    }
+
+    .account-avatar {
+        width: 47px;
+        height: 47px;
+    }
+
+    .account-profile-info h2 {
+        font-size: 22px;
+    }
+
+    .account-member-label {
+        padding: 6px 7px;
+        font-size: 8px;
+    }
+
+    .account-section-heading {
+        margin-top: 40px;
+    }
+
+    .account-section-heading h2,
+    .account-orders-heading h2 {
+        font-size: 32px;
+    }
+
+    .account-orders-section {
+        margin-top: 50px;
+    }
+
+    .account-orders-heading {
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .account-view-all {
+        margin-top: 20px;
+        font-size: 10px;
+        white-space: nowrap;
+    }
+
+    .account-order-row {
+        flex-wrap: wrap;
+    }
+
+    .account-order-icon {
+        width: 40px;
+        height: 40px;
+    }
+
+    .account-order-main {
+        flex-basis: calc(100% - 65px);
+    }
+
+    .account-order-total {
+        margin-left: 53px;
+        min-width: 0;
+    }
+
+    .account-order-status {
+        margin-left: auto;
+    }
+
+    .account-order-arrow {
+        display: none;
+    }
+}

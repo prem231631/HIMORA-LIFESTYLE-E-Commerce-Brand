@@ -1,0 +1,344 @@
+
+.cart-page {
+    min-height: 75vh;
+    background: #f7f5f0;
+    color: #111111;
+    padding-bottom: 120px;
+}
+
+.cart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 30px;
+    padding: 110px 7vw 65px;
+    border-bottom: 1px solid #d8d2c8;
+}
+
+.cart-eyebrow,
+.cart-message > p:first-child {
+    margin: 0 0 25px;
+    font-family: "Manrope", sans-serif;
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    color: #777168;
+}
+
+.cart-header h1,
+.cart-message h1 {
+    margin: 0;
+    font-family: "Cormorant Garamond", serif;
+    font-size: clamp(64px, 8vw, 105px);
+    font-weight: 400;
+    line-height: 0.86;
+    letter-spacing: -0.04em;
+}
+
+.cart-item-count {
+    margin: 0 0 8px;
+    font-family: "Manrope", sans-serif;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: #777168;
+    white-space: nowrap;
+}
+
+.cart-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.7fr) minmax(280px, 0.8fr);
+    gap: 80px;
+    padding: 55px 7vw 0;
+    align-items: start;
+}
+
+.cart-section-heading {
+    display: flex;
+    justify-content: space-between;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #d8d2c8;
+    font-family: "Manrope", sans-serif;
+    font-size: 10px;
+    letter-spacing: 0.13em;
+    color: #777168;
+}
+
+.cart-item {
+    display: grid;
+    grid-template-columns: 150px minmax(0, 1fr) auto;
+    gap: 25px;
+    padding: 28px 0;
+    border-bottom: 1px solid #d8d2c8;
+}
+
+.cart-item-image {
+    aspect-ratio: 0.85 / 1;
+    background: #e9e5dd;
+    overflow: hidden;
+}
+
+.cart-image-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    color: #777168;
+    font-family: "Cormorant Garamond", serif;
+    font-size: 25px;
+    letter-spacing: 0.08em;
+}
+
+.cart-item-details {
+    min-width: 0;
+}
+
+.cart-item-sku {
+    margin: 0 0 10px;
+    font-family: "Manrope", sans-serif;
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    color: #777168;
+}
+
+.cart-item-details h2 {
+    margin: 0 0 13px;
+    font-family: "Cormorant Garamond", serif;
+    font-size: 30px;
+    font-weight: 400;
+}
+
+.cart-item-details > p:not(.cart-item-sku) {
+    margin: 5px 0;
+    font-family: "Manrope", sans-serif;
+    font-size: 11px;
+    color: #777168;
+}
+
+.cart-quantity {
+    display: inline-flex;
+    align-items: center;
+    gap: 18px;
+    margin-top: 18px;
+    padding: 8px 10px;
+    border: 1px solid #d0cbc3;
+}
+
+.cart-quantity button {
+    display: grid;
+    place-items: center;
+    border: 0;
+    padding: 0;
+    background: transparent;
+    color: #111111;
+    cursor: pointer;
+}
+
+.cart-quantity button:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.cart-quantity span {
+    min-width: 12px;
+    text-align: center;
+    font-family: "Manrope", sans-serif;
+    font-size: 12px;
+}
+
+.cart-remove {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 15px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: #777168;
+    font-family: "Manrope", sans-serif;
+    font-size: 10px;
+    cursor: pointer;
+}
+
+.cart-remove:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.cart-item-price {
+    padding-top: 3px;
+    font-family: "Manrope", sans-serif;
+    font-size: 11px;
+    white-space: nowrap;
+}
+
+.cart-error {
+    margin: 18px 0;
+    color: #a12b2b;
+    font-family: "Manrope", sans-serif;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.cart-empty {
+    padding: 70px 0;
+}
+
+.cart-empty h2 {
+    margin: 0 0 12px;
+    font-family: "Cormorant Garamond", serif;
+    font-size: 38px;
+    font-weight: 400;
+}
+
+.cart-empty p,
+.cart-message > p:not(:first-child) {
+    margin: 0 0 25px;
+    font-family: "Manrope", sans-serif;
+    font-size: 12px;
+    line-height: 1.8;
+    color: #777168;
+}
+
+.cart-primary-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #111111;
+    color: #111111;
+    font-family: "Manrope", sans-serif;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-decoration: none;
+    text-transform: uppercase;
+}
+
+.cart-summary {
+    padding: 28px;
+    border: 1px solid #d8d2c8;
+}
+
+.cart-summary-eyebrow {
+    margin: 0 0 30px;
+    font-family: "Manrope", sans-serif;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+}
+
+.cart-summary-row,
+.cart-summary-total {
+    display: flex;
+    justify-content: space-between;
+    gap: 18px;
+    margin-bottom: 20px;
+    font-family: "Manrope", sans-serif;
+    font-size: 11px;
+    line-height: 1.6;
+}
+
+.cart-summary-row span:last-child {
+    text-align: right;
+}
+
+.cart-summary-row {
+    color: #777168;
+}
+
+.cart-summary-total {
+    margin-top: 28px;
+    padding-top: 22px;
+    border-top: 1px solid #d8d2c8;
+    font-size: 12px;
+    color: #111111;
+}
+
+.cart-checkout-button {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+    min-height: 52px;
+    padding: 0 17px;
+    border: 1px solid #111111;
+    background: #111111;
+    color: #f7f5f0;
+    font-family: "Manrope", sans-serif;
+    font-size: 10px;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    cursor: pointer;
+}
+
+.cart-checkout-button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.cart-payment-note {
+    margin: 17px 0 25px;
+    text-align: center;
+    font-family: "Manrope", sans-serif;
+    font-size: 10px;
+    color: #777168;
+}
+
+.cart-continue-shopping {
+    display: block;
+    width: fit-content;
+    margin: 0 auto;
+    color: #111111;
+    font-family: "Manrope", sans-serif;
+    font-size: 10px;
+    text-decoration: none;
+    border-bottom: 1px solid #111111;
+    padding-bottom: 5px;
+}
+
+.cart-message {
+    padding: 120px 7vw;
+}
+
+.cart-message h1 {
+    margin-bottom: 30px;
+}
+
+@media (max-width: 900px) {
+    .cart-layout {
+        grid-template-columns: 1fr;
+        gap: 45px;
+    }
+
+    .cart-summary {
+        max-width: none;
+    }
+}
+
+@media (max-width: 600px) {
+    .cart-header {
+        padding: 85px 6vw 45px;
+    }
+
+    .cart-layout {
+        padding: 35px 6vw 0;
+    }
+
+    .cart-item {
+        grid-template-columns: 100px minmax(0, 1fr);
+        gap: 17px;
+    }
+
+    .cart-item-price {
+        grid-column: 2;
+        grid-row: 1;
+        justify-self: end;
+    }
+
+    .cart-item-details h2 {
+        font-size: 25px;
+    }
+
+    .cart-summary {
+        padding: 22px;
+    }
+}

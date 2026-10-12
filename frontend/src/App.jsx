@@ -2,6 +2,7 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 
 import Navbar from "./components/layout/Navbar";
 import Search from "./pages/public/Search";
+import Cart from "./pages/public/Cart";
 import Hero from "./components/layout/Hero";
 import NewCollection from "./components/layout/NewCollection";
 import EyewearSection from "./components/layout/EyewearSection";
@@ -50,6 +51,14 @@ function App() {
                     <>
                         <Navbar />\
                         <Search />
+                    </>
+                } />
+
+                {/* CART */}
+                <Route path="/cart" element={
+                    <>
+                        <Navbar />
+                        <Cart />
                     </>
                 } />
 

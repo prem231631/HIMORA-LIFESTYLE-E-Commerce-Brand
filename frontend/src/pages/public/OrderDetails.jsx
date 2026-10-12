@@ -1,3 +1,4 @@
+
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
@@ -80,6 +81,10 @@ function OrderDetails() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
+    const [cancelling, setCancelling] = useState(false);
+    const [cancelMessage, setCancelMessage] = useState("");
+    const [cancelError, setCancelError] = useState("");
+
     const loadOrder = useCallback(async () => {
         const token = getAuthToken();
 
@@ -141,6 +146,89 @@ function OrderDetails() {
     useEffect(() => {
         loadOrder();
     }, [loadOrder]);
+
+    const handleCancelOrder = async () => {
+        if (!order || cancelling) return;
+
+        const confirmed = window.confirm(
+            "Are you sure you want to cancel this order? This action cannot be undone."
+        );
+
+        if (!confirmed) return;
+
+        const token = getAuthToken();
+
+        if (!token) {
+            navigate("/login", {
+                state: {
+                    from: `/account/orders/${orderId}`,
+                },
+                replace: true,
+            });
+            return;
+        }
+
+        setCancelling(true);
+        setCancelMessage("");
+        setCancelError("");
+
+        try {
+            const response = await fetch(
+                `${API_BASE_URL}/api/orders/${orderId}/cancel`,
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "application/json",
+                    },
+                }
+            );
+
+            const data = await response.json().catch(() => ({}));
+
+            if (response.status === 401) {
+                localStorage.removeItem("access_token");
+                localStorage.removeItem("token");
+
+                navigate("/login", {
+                    state: {
+                        from: `/account/orders/${orderId}`,
+                    },
+                    replace: true,
+                });
+                return;
+            }
+
+            if (!response.ok) {
+                const detail =
+                    typeof data.detail === "string"
+                        ? data.detail
+                        : "Unable to cancel this order.";
+
+                throw new Error(detail);
+            }
+
+            setCancelMessage(
+                "Your order has been cancelled successfully."
+            );
+
+            // Reload the order so the displayed status is up to date.
+            await loadOrder();
+        } catch (err) {
+            setCancelError(
+                err.message || "Something went wrong while cancelling."
+            );
+        } finally {
+            setCancelling(false);
+        }
+    };
+
+    const normalizedStatus = String(order?.status || "")
+        .trim()
+        .toUpperCase();
+
+    // Keep the button hidden for orders that are no longer pending.
+    const canCancel = normalizedStatus === "PENDING";
 
     return (
         <main className="order-details-page">
@@ -205,7 +293,8 @@ function OrderDetails() {
                                 <p>
                                     Order placed{" "}
                                     {formatDate(
-                                        order.created_at || order.order_date
+                                        order.created_at ||
+                                            order.order_date
                                     )}
                                 </p>
                             </div>
@@ -249,7 +338,7 @@ function OrderDetails() {
                                                 className="order-details-item"
                                                 key={
                                                     item.id ??
-                                                    `${item.product_name}-${index}`
+                                                    `${item.product_name || item.name || "item"}-${index}`
                                                 }
                                             >
                                                 <div className="order-item-placeholder">
@@ -269,7 +358,8 @@ function OrderDetails() {
                                                         </p>
                                                     )}
 
-                                                    {(item.size || item.color) && (
+                                                    {(item.size ||
+                                                        item.color) && (
                                                         <p>
                                                             {[
                                                                 item.size,
@@ -378,7 +468,8 @@ function OrderDetails() {
                                             <p>{order.shipping_address}</p>
                                         ) : (
                                             <>
-                                                {order.shipping_address.full_name && (
+                                                {order.shipping_address
+                                                    .full_name && (
                                                     <strong>
                                                         {
                                                             order.shipping_address
@@ -387,7 +478,8 @@ function OrderDetails() {
                                                     </strong>
                                                 )}
 
-                                                {order.shipping_address.phone && (
+                                                {order.shipping_address
+                                                    .phone && (
                                                     <p>
                                                         {
                                                             order.shipping_address
@@ -476,11 +568,55 @@ function OrderDetails() {
                             <button
                                 type="button"
                                 className="order-details-secondary-button"
-                                onClick={() => navigate("/account/orders")}
+                                onClick={() =>
+                                    navigate("/account/orders")
+                                }
                             >
                                 View all orders
                             </button>
+
+                            {canCancel && (
+                                <button
+                                    type="button"
+                                    className="order-cancel-button"
+                                    onClick={handleCancelOrder}
+                                    disabled={cancelling}
+                                >
+                                    {cancelling ? (
+                                        <>
+                                            <LoaderCircle
+                                                size={16}
+                                                className="order-details-spinner"
+                                            />
+                                            Cancelling...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <XCircle size={16} />
+                                            Cancel Order
+                                        </>
+                                    )}
+                                </button>
+                            )}
                         </div>
+
+                        {cancelMessage && (
+                            <p
+                                role="status"
+                                className="order-cancel-success"
+                            >
+                                {cancelMessage}
+                            </p>
+                        )}
+
+                        {cancelError && (
+                            <p
+                                role="alert"
+                                className="order-cancel-error"
+                            >
+                                {cancelError}
+                            </p>
+                        )}
                     </>
                 ) : null}
             </div>

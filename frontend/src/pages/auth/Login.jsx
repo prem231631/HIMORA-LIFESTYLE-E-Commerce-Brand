@@ -1,11 +1,13 @@
+
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
 function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [form, setForm] = useState({
     email: "",
@@ -26,7 +28,6 @@ function Login() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-
     setError("");
 
     if (!form.email.trim()) {
@@ -65,25 +66,51 @@ function Login() {
           );
         }
 
-        throw new Error(data.detail || "Invalid email or password.");
+        throw new Error(
+          typeof data.detail === "string"
+            ? data.detail
+            : "Invalid email or password."
+        );
+      }
+
+      if (!data.access_token) {
+        throw new Error("Login succeeded without an access token.");
       }
 
       localStorage.setItem("access_token", data.access_token);
 
       if (data.user) {
         localStorage.setItem("user", JSON.stringify(data.user));
-        localStorage.setItem("userName", data.user.full_name);
+        localStorage.setItem(
+          "userName",
+          data.user.full_name || ""
+        );
         localStorage.setItem(
           "isAdmin",
           data.user.role === "admin" ? "true" : "false"
         );
       }
 
+      // Notify components that authentication may have changed.
+      window.dispatchEvent(new Event("himora-auth-updated"));
+
+      // Admins always go to the admin orders dashboard.
       if (data.user?.role === "admin") {
-        navigate("/admin/orders");
-      } else {
-        navigate("/");
+        navigate("/admin/orders", { replace: true });
+        return;
       }
+
+      // Return customers to the page they originally requested.
+      const requestedDestination = location.state?.from;
+
+      const destination =
+        typeof requestedDestination === "string" &&
+        requestedDestination.startsWith("/") &&
+        !requestedDestination.startsWith("//")
+          ? requestedDestination
+          : "/";
+
+      navigate(destination, { replace: true });
     } catch (err) {
       setError(err.message || "Unable to sign in.");
     } finally {
@@ -138,6 +165,7 @@ function Login() {
                 value={form.email}
                 onChange={handleChange}
                 autoComplete="email"
+                required
               />
             </div>
 
@@ -152,11 +180,15 @@ function Login() {
                 value={form.password}
                 onChange={handleChange}
                 autoComplete="current-password"
+                required
               />
             </div>
 
             {error && (
-              <div className="himora-auth-message himora-auth-error">
+              <div
+                className="himora-auth-message himora-auth-error"
+                role="alert"
+              >
                 {error}
               </div>
             )}

@@ -49,7 +49,7 @@ function App() {
                 <Route path="/search" element={
                     <>
                         <Navbar />\
-                        <search />
+                        <Search />
                     </>
                 } />
 

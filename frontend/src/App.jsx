@@ -1,12 +1,14 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 
 import Navbar from "./components/layout/Navbar";
-import Search from "./pages/public/Search";
-import Cart from "./pages/public/Cart";
 import Hero from "./components/layout/Hero";
 import NewCollection from "./components/layout/NewCollection";
 import EyewearSection from "./components/layout/EyewearSection";
 import FeaturedProducts from "./components/layout/FeaturedProducts";
+
+import Search from "./pages/public/Search";
+import Cart from "./pages/public/Cart";
+import Checkout from "./pages/public/Checkout";
 import Collections from "./pages/public/Collections";
 import Eyewear from "./pages/public/Eyewear";
 import Apparel from "./pages/public/Apparel";
@@ -39,7 +41,6 @@ function App() {
     return (
         <BrowserRouter>
             <Routes>
-
                 {/* HOME */}
                 <Route
                     path="/"
@@ -47,52 +48,81 @@ function App() {
                 />
 
                 {/* SEARCH */}
-                <Route path="/search" element={
-                    <>
-                        <Navbar />\
-                        <Search />
-                    </>
-                } />
+                <Route
+                    path="/search"
+                    element={
+                        <>
+                            <Navbar />
+                            <Search />
+                        </>
+                    }
+                />
 
                 {/* CART */}
-                <Route path="/cart" element={
-                    <>
-                        <Navbar />
-                        <Cart />
-                    </>
-                } />
+                <Route
+                    path="/cart"
+                    element={
+                        <>
+                            <Navbar />
+                            <Cart />
+                        </>
+                    }
+                />
+
+                {/* CHECKOUT */}
+                <Route
+                    path="/checkout"
+                    element={
+                        <>
+                            <Navbar />
+                            <Checkout />
+                        </>
+                    }
+                />
 
                 {/* COLLECTIONS */}
-                <Route path="/collections" element={
-                    <>
-                        <Navbar />
-                        <Collections />
-                    </>
-                } />
+                <Route
+                    path="/collections"
+                    element={
+                        <>
+                            <Navbar />
+                            <Collections />
+                        </>
+                    }
+                />
 
                 {/* EYEWEAR */}
-                <Route path="/eyewear" element={
-                    <>
-                        <Navbar />
-                        <Eyewear />
-                    </>
-                } />    
+                <Route
+                    path="/eyewear"
+                    element={
+                        <>
+                            <Navbar />
+                            <Eyewear />
+                        </>
+                    }
+                />
 
                 {/* APPAREL */}
-                <Route path="/apparel" element={
-                    <>
-                        <Navbar />
-                        <Apparel />
-                    </>
-                } />
+                <Route
+                    path="/apparel"
+                    element={
+                        <>
+                            <Navbar />
+                            <Apparel />
+                        </>
+                    }
+                />
 
                 {/* ACCESSORIES */}
-                <Route path="/accessories" element={
-                    <>
-                        <Navbar />
-                        <Accessories />
-                    </>
-                } />
+                <Route
+                    path="/accessories"
+                    element={
+                        <>
+                            <Navbar />
+                            <Accessories />
+                        </>
+                    }
+                />
 
                 {/* PRODUCT DETAILS */}
                 <Route
@@ -116,7 +146,7 @@ function App() {
                     }
                 />
 
-                {/* AUTH */}
+                {/* AUTHENTICATION */}
                 <Route
                     path="/register"
                     element={<Register />}
@@ -137,7 +167,6 @@ function App() {
                     path="/admin/orders/:orderId"
                     element={<AdminOrderDetails />}
                 />
-
             </Routes>
         </BrowserRouter>
     );

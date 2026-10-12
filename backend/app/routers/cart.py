@@ -16,9 +16,7 @@ router = APIRouter(
 )
 
 
-def build_cart_response(
-    cart: Cart,
-) -> CartResponse:
+def build_cart_response(cart: Cart) -> CartResponse:
     items = []
     total_items = 0
     subtotal = Decimal("0.00")
@@ -34,6 +32,25 @@ def build_cart_response(
             else 0
         )
 
+        # Find the primary product image, falling back to the
+        # first image if no primary image is configured.
+        product_images = list(product.images or [])
+
+        primary_image = next(
+            (
+                image
+                for image in product_images
+                if image.is_primary
+            ),
+            product_images[0] if product_images else None,
+        )
+
+        image_url = (
+            primary_image.image_url
+            if primary_image
+            else None
+        )
+
         item_subtotal = product.price * item.quantity
 
         items.append(
@@ -44,6 +61,8 @@ def build_cart_response(
                 "sku": variant.sku,
                 "product_id": product.id,
                 "product_name": product.name,
+                "product_slug": product.slug,
+                "image_url": image_url,
                 "unit_price": product.price,
                 "size": variant.size,
                 "color": variant.color,
@@ -72,8 +91,9 @@ def get_cart(
     db: Session = Depends(get_db),
 ):
     cart = db.scalar(
-        select(Cart)
-        .where(Cart.user_id == current_user.id)
+        select(Cart).where(
+            Cart.user_id == current_user.id
+        )
     )
 
     if not cart:
@@ -96,8 +116,9 @@ def add_cart_item(
     db: Session = Depends(get_db),
 ):
     cart = db.scalar(
-        select(Cart)
-        .where(Cart.user_id == current_user.id)
+        select(Cart).where(
+            Cart.user_id == current_user.id
+        )
     )
 
     if not cart:
@@ -106,8 +127,7 @@ def add_cart_item(
         db.flush()
 
     variant = db.scalar(
-        select(ProductVariant)
-        .where(
+        select(ProductVariant).where(
             ProductVariant.id == item_data.variant_id,
             ProductVariant.is_active.is_(True),
         )
@@ -120,8 +140,9 @@ def add_cart_item(
         )
 
     inventory = db.scalar(
-        select(Inventory)
-        .where(Inventory.variant_id == variant.id)
+        select(Inventory).where(
+            Inventory.variant_id == variant.id
+        )
     )
 
     if not inventory:
@@ -131,8 +152,7 @@ def add_cart_item(
         )
 
     existing_item = db.scalar(
-        select(CartItem)
-        .where(
+        select(CartItem).where(
             CartItem.cart_id == cart.id,
             CartItem.variant_id == variant.id,
         )
@@ -155,12 +175,13 @@ def add_cart_item(
     if existing_item:
         existing_item.quantity = new_quantity
     else:
-        cart_item = CartItem(
-            cart_id=cart.id,
-            variant_id=variant.id,
-            quantity=item_data.quantity,
+        db.add(
+            CartItem(
+                cart_id=cart.id,
+                variant_id=variant.id,
+                quantity=item_data.quantity,
+            )
         )
-        db.add(cart_item)
 
     db.commit()
     db.refresh(cart)
@@ -179,8 +200,9 @@ def update_cart_item(
     db: Session = Depends(get_db),
 ):
     cart = db.scalar(
-        select(Cart)
-        .where(Cart.user_id == current_user.id)
+        select(Cart).where(
+            Cart.user_id == current_user.id
+        )
     )
 
     if not cart:
@@ -190,8 +212,7 @@ def update_cart_item(
         )
 
     cart_item = db.scalar(
-        select(CartItem)
-        .where(
+        select(CartItem).where(
             CartItem.id == item_id,
             CartItem.cart_id == cart.id,
         )
@@ -204,8 +225,7 @@ def update_cart_item(
         )
 
     inventory = db.scalar(
-        select(Inventory)
-        .where(
+        select(Inventory).where(
             Inventory.variant_id == cart_item.variant_id
         )
     )
@@ -243,8 +263,9 @@ def remove_cart_item(
     db: Session = Depends(get_db),
 ):
     cart = db.scalar(
-        select(Cart)
-        .where(Cart.user_id == current_user.id)
+        select(Cart).where(
+            Cart.user_id == current_user.id
+        )
     )
 
     if not cart:
@@ -254,8 +275,7 @@ def remove_cart_item(
         )
 
     cart_item = db.scalar(
-        select(CartItem)
-        .where(
+        select(CartItem).where(
             CartItem.id == item_id,
             CartItem.cart_id == cart.id,
         )

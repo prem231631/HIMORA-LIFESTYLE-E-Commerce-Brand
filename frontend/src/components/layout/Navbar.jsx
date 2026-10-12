@@ -189,7 +189,17 @@ function Navbar() {
                         type="button"
                         className="navbar-bag"
                         aria-label={`Shopping bag, ${bagCount} items`}
-                        onClick={() => navigate("/cart")}
+                        onClick={() => {
+                            const token = localStorage.getItem("access_token");
+
+                            if(token){
+                                navigate("/cart");
+                            } else {
+                                navigate("/login", {
+                                    state: {from: "/cart"},
+                                });
+                            }
+                        }}
                     >
                         <ShoppingBag
                             size={19}
@@ -261,7 +271,16 @@ function Navbar() {
                         type="button"
                         onClick={() => {
                             closeMobileMenu();
-                            navigate("/cart");
+
+                            const token = localStorage.getItem("access_token");
+
+                            if(token){
+                                navigate("/cart");
+                            } else {
+                                navigate("/login", {
+                                    state: {from: "/cart"},
+                                });
+                            }
                         }}
                     >
                         Shopping Bag ({bagCount})

@@ -15,6 +15,7 @@ import Apparel from "./pages/public/Apparel";
 import Accessories from "./pages/public/Accessories";
 import Products from "./pages/public/Products";
 import ProductDetails from "./pages/public/ProductDetails";
+import Addresses from "./pages/public/Addresses";
 
 import AdminOrders from "./pages/admin/AdminOrders";
 import AdminOrderDetails from "./pages/admin/AdminOrderDetail";
@@ -76,6 +77,17 @@ function App() {
                         <>
                             <Navbar />
                             <Checkout />
+                        </>
+                    }
+                />
+
+                {/* DELIVERY ADDRESSES */}
+                <Route
+                    path="account/addresses"
+                    element={
+                        <>
+                            <Navbar />
+                            <Addresses />
                         </>
                     }
                 />

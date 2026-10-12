@@ -1,0 +1,383 @@
+
+/* =========================================
+   HIMORA LIFESTYLE — LOGIN PAGE
+   Premium Luxury Editorial Design
+========================================= */
+
+.himora-auth-page {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr 0.85fr;
+  background: #f7f5f0;
+  color: #111111;
+  font-family: "Manrope", sans-serif;
+}
+
+/* =========================================
+   LEFT EDITORIAL VISUAL
+========================================= */
+
+.himora-auth-visual {
+  position: relative;
+  min-height: 720px;
+  overflow: hidden;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(17, 17, 17, 0.15) 0%,
+      rgba(17, 17, 17, 0.3) 35%,
+      rgba(17, 17, 17, 0.82) 100%
+    ),
+    url("https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1800&q=85")
+      center / cover no-repeat;
+}
+
+.himora-auth-visual::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  pointer-events: none;
+}
+
+.himora-auth-visual-overlay {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 720px;
+  padding: 44px 48px;
+  color: #ffffff;
+}
+
+.himora-auth-brand {
+  width: fit-content;
+  color: #ffffff;
+  font-family: "Cormorant Garamond", serif;
+  font-size: 35px;
+  font-weight: 600;
+  letter-spacing: 0.19em;
+  text-decoration: none;
+}
+
+.himora-auth-editorial {
+  max-width: 590px;
+  padding-bottom: 36px;
+}
+
+.himora-auth-editorial > p {
+  margin: 0 0 22px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+
+.himora-auth-editorial h1 {
+  margin: 0;
+  font-family: "Cormorant Garamond", serif;
+  font-size: clamp(38px, 4.2vw, 66px);
+  font-weight: 400;
+  line-height: 1.12;
+  letter-spacing: -0.025em;
+}
+
+/* =========================================
+   RIGHT FORM SECTION
+========================================= */
+
+.himora-auth-form-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  padding: 64px 48px;
+  background: #f7f5f0;
+}
+
+.himora-auth-form-wrapper {
+  width: 100%;
+  max-width: 420px;
+  margin: auto;
+}
+
+/* Heading */
+
+.himora-auth-heading {
+  margin-bottom: 42px;
+}
+
+.himora-auth-heading > span {
+  display: inline-block;
+  margin-bottom: 16px;
+  color: #81796f;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+}
+
+.himora-auth-heading h2 {
+  margin: 0 0 13px;
+  color: #111111;
+  font-family: "Cormorant Garamond", serif;
+  font-size: clamp(46px, 5vw, 64px);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.035em;
+}
+
+.himora-auth-heading p {
+  max-width: 340px;
+  margin: 0;
+  color: #777168;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.9;
+}
+
+/* =========================================
+   FORM FIELDS
+========================================= */
+
+.himora-auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+.himora-auth-field {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+.himora-auth-field label {
+  color: #35332f;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+}
+
+.himora-auth-field input {
+  width: 100%;
+  min-height: 54px;
+  padding: 15px 16px;
+  border: 1px solid #d8d2c8;
+  border-radius: 0;
+  outline: none;
+  background: #ffffff;
+  color: #111111;
+  font-family: "Manrope", sans-serif;
+  font-size: 13px;
+  transition:
+    border-color 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.himora-auth-field input::placeholder {
+  color: #aaa49b;
+}
+
+.himora-auth-field input:hover {
+  border-color: #a59d92;
+}
+
+.himora-auth-field input:focus {
+  border-color: #26352d;
+  box-shadow: 0 0 0 2px rgba(38, 53, 45, 0.08);
+}
+
+/* =========================================
+   ERROR MESSAGE
+========================================= */
+
+.himora-auth-message {
+  padding: 13px 15px;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.himora-auth-error {
+  border-left: 2px solid #a33c32;
+  background: #f6eae7;
+  color: #8d3028;
+}
+
+/* =========================================
+   SIGN IN BUTTON
+========================================= */
+
+.himora-auth-submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 55px;
+  margin-top: 5px;
+  padding: 16px 22px;
+  border: 1px solid #111111;
+  border-radius: 0;
+  background: #111111;
+  color: #ffffff;
+  font-family: "Manrope", sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  cursor: pointer;
+  transition:
+    background 0.25s ease,
+    color 0.25s ease,
+    border-color 0.25s ease;
+}
+
+.himora-auth-submit:hover:not(:disabled) {
+  border-color: #26352d;
+  background: #26352d;
+}
+
+.himora-auth-submit:focus-visible {
+  outline: 2px solid #26352d;
+  outline-offset: 4px;
+}
+
+.himora-auth-submit:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* =========================================
+   REGISTER LINK
+========================================= */
+
+.himora-auth-switch {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin-top: 32px;
+  color: #777168;
+  font-size: 12px;
+}
+
+.himora-auth-switch a {
+  color: #111111;
+  font-weight: 600;
+  text-decoration: none;
+  text-underline-offset: 4px;
+  transition: color 0.2s ease;
+}
+
+.himora-auth-switch a:hover {
+  color: #536b5b;
+  text-decoration: underline;
+}
+
+/* =========================================
+   RESPONSIVE DESIGN
+========================================= */
+
+@media (min-width: 1600px) {
+  .himora-auth-page {
+    grid-template-columns: 1.05fr 0.95fr;
+  }
+
+  .himora-auth-form-section {
+    padding-right: 80px;
+    padding-left: 80px;
+  }
+}
+
+@media (max-width: 1100px) {
+  .himora-auth-page {
+    grid-template-columns: 0.9fr 1fr;
+  }
+
+  .himora-auth-visual-overlay {
+    padding: 35px 30px;
+  }
+
+  .himora-auth-form-section {
+    padding: 48px 32px;
+  }
+
+  .himora-auth-editorial h1 {
+    font-size: 48px;
+  }
+}
+
+@media (max-width: 760px) {
+  .himora-auth-page {
+    grid-template-columns: 1fr;
+    min-height: 100vh;
+  }
+
+  .himora-auth-visual {
+    min-height: 260px;
+    background-position: center 45%;
+  }
+
+  .himora-auth-visual-overlay {
+    min-height: 260px;
+    padding: 25px 24px;
+  }
+
+  .himora-auth-brand {
+    font-size: 27px;
+  }
+
+  .himora-auth-editorial {
+    padding-bottom: 5px;
+  }
+
+  .himora-auth-editorial > p {
+    margin-bottom: 10px;
+    font-size: 9px;
+  }
+
+  .himora-auth-editorial h1 {
+    font-size: clamp(30px, 7vw, 42px);
+  }
+
+  .himora-auth-form-section {
+    align-items: flex-start;
+    padding: 44px 25px 55px;
+  }
+
+  .himora-auth-form-wrapper {
+    max-width: 480px;
+  }
+
+  .himora-auth-heading {
+    margin-bottom: 32px;
+  }
+
+  .himora-auth-heading h2 {
+    font-size: 52px;
+  }
+}
+
+@media (max-width: 380px) {
+  .himora-auth-visual-overlay {
+    padding: 22px 18px;
+  }
+
+  .himora-auth-form-section {
+    padding-right: 20px;
+    padding-left: 20px;
+  }
+
+  .himora-auth-editorial h1 {
+    font-size: 29px;
+  }
+}
+
+/* Respect reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .himora-auth-field input,
+  .himora-auth-submit,
+  .himora-auth-switch a {
+    transition: none;
+  }
+}

@@ -1,33 +1,85 @@
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Search as SearchIcon, ArrowUpRight } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import "./Search.css";
 
-const products = [
-    {
-        id: "himora-horizon",
-        name: "Horizon",
-        category: "Eyewear",
-        code: "HIMORA / E-01",
-        price: "NPR 18,500",
-        image:
-            "https://images.unsplash.com/photo-1511499767150-a48a237f0083?auto=format&fit=crop&w=900&q=85",
-    },
-    {
-        id: "himora-altitude",
-        name: "Altitude",
-        category: "Eyewear",
-        code: "HIMORA / E-02",
-        price: "NPR 18,500",
-        image:
-            "https://images.unsplash.com/photo-1577803645773-f96470509666?auto=format&fit=crop&w=900&q=85",
-    },
-];
+const API_BASE_URL =
+    import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+
+const FALLBACK_IMAGE =
+    "https://images.unsplash.com/photo-1511499767150-a48a237f0083?auto=format&fit=crop&w=900&q=85";
+
+const SUGGESTIONS = ["Eyewear", "Horizon", "Altitude"];
+
+function formatPrice(price) {
+    const amount = Number(price);
+
+    if (!Number.isFinite(amount)) {
+        return "Price unavailable";
+    }
+
+    return `NPR ${amount.toLocaleString("en-IN", {
+        maximumFractionDigits: 2,
+    })}`;
+}
 
 function Search() {
     const [query, setQuery] = useState("");
+    const [products, setProducts] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
+
+    const fetchProducts = useCallback(async (signal) => {
+        setLoading(true);
+        setError("");
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/products`, {
+                method: "GET",
+                headers: {
+                    Accept: "application/json",
+                },
+                signal,
+            });
+
+            if (!response.ok) {
+                throw new Error(
+                    "Unable to load products. Please try again."
+                );
+            }
+
+            const data = await response.json();
+
+            if (!Array.isArray(data)) {
+                throw new Error("The products response has an unexpected format.");
+            }
+
+            setProducts(data.filter((product) => product.is_active !== false));
+        } catch (err) {
+            if (err.name === "AbortError") {
+                return;
+            }
+
+            console.error("Unable to fetch HIMORA products:", err);
+            setError(
+                err.message || "Unable to load products. Please try again."
+            );
+        } finally {
+            if (!signal.aborted) {
+                setLoading(false);
+            }
+        }
+    }, []);
+
+    useEffect(() => {
+        const controller = new AbortController();
+
+        fetchProducts(controller.signal);
+
+        return () => controller.abort();
+    }, [fetchProducts]);
 
     const filteredProducts = useMemo(() => {
         const searchTerm = query.trim().toLowerCase();
@@ -36,12 +88,25 @@ function Search() {
             return [];
         }
 
-        return products.filter((product) =>
-            `${product.name} ${product.category} ${product.code}`
-                .toLowerCase()
-                .includes(searchTerm)
-        );
-    }, [query]);
+        return products.filter((product) => {
+            const searchableText = [
+                product.name,
+                product.slug,
+                product.description,
+                product.category?.name,
+                product.category?.slug,
+            ]
+                .filter(Boolean)
+                .join(" ")
+                .toLowerCase();
+
+            return searchableText.includes(searchTerm);
+        });
+    }, [query, products]);
+
+    const handleSuggestion = (term) => {
+        setQuery(term);
+    };
 
     return (
         <main className="search-page">
@@ -89,19 +154,41 @@ function Search() {
 
                 <div className="search-results-header">
                     <span>
-                        {query.trim()
-                            ? `${filteredProducts.length} RESULTS`
-                            : "SUGGESTED SEARCHES"}
+                        {loading
+                            ? "LOADING PRODUCTS"
+                            : query.trim()
+                                ? `${filteredProducts.length} RESULTS`
+                                : "SUGGESTED SEARCHES"}
                     </span>
                 </div>
 
-                {!query.trim() ? (
+                {loading ? (
+                    <div className="search-empty">
+                        <p>Discovering the HIMORA collection...</p>
+                    </div>
+                ) : error ? (
+                    <div className="search-empty">
+                        <h2>Unable to load the collection.</h2>
+                        <p>{error}</p>
+
+                        <button
+                            type="button"
+                            className="search-clear"
+                            onClick={() => {
+                                const controller = new AbortController();
+                                fetchProducts(controller.signal);
+                            }}
+                        >
+                            Try again
+                        </button>
+                    </div>
+                ) : !query.trim() ? (
                     <div className="search-suggestions">
-                        {["Eyewear", "Horizon", "Altitude"].map((term) => (
+                        {SUGGESTIONS.map((term) => (
                             <button
                                 type="button"
                                 key={term}
-                                onClick={() => setQuery(term)}
+                                onClick={() => handleSuggestion(term)}
                             >
                                 {term}
                                 <ArrowUpRight size={15} />
@@ -110,36 +197,69 @@ function Search() {
                     </div>
                 ) : filteredProducts.length > 0 ? (
                     <div className="search-results-grid">
-                        {filteredProducts.map((product) => (
-                            <Link
-                                to="/products/himora-horizon"
-                                className="search-product"
-                                key={product.id}
-                            >
-                                <div className="search-product-image">
-                                    <img
-                                        src={product.image}
-                                        alt={product.name}
-                                    />
-                                </div>
+                        {filteredProducts.map((product) => {
+                            const primaryImage =
+                                product.images?.find(
+                                    (image) => image.is_primary
+                                ) || product.images?.[0];
 
-                                <div className="search-product-info">
-                                    <div>
-                                        <span>{product.code}</span>
-                                        <h2>{product.name}</h2>
-                                        <p>{product.category}</p>
+                            const imageUrl =
+                                primaryImage?.image_url || FALLBACK_IMAGE;
+
+                            return (
+                                <Link
+                                    to={`/products/${product.slug || product.id}`}
+                                    className="search-product"
+                                    key={product.id}
+                                >
+                                    <div className="search-product-image">
+                                        <img
+                                            src={imageUrl}
+                                            alt={
+                                                primaryImage?.alt_text ||
+                                                product.name
+                                            }
+                                            loading="lazy"
+                                            onError={(event) => {
+                                                if (
+                                                    event.currentTarget.src !==
+                                                    FALLBACK_IMAGE
+                                                ) {
+                                                    event.currentTarget.src =
+                                                        FALLBACK_IMAGE;
+                                                }
+                                            }}
+                                        />
                                     </div>
 
-                                    <span className="search-product-price">
-                                        {product.price}
-                                    </span>
-                                </div>
-                            </Link>
-                        ))}
+                                    <div className="search-product-info">
+                                        <div>
+                                            <span>
+                                                HIMORA /{" "}
+                                                {product.category?.name ||
+                                                    "COLLECTION"}
+                                            </span>
+
+                                            <h2>{product.name}</h2>
+
+                                            <p>
+                                                {product.category?.name ||
+                                                    "HIMORA COLLECTION"}
+                                            </p>
+                                        </div>
+
+                                        <span className="search-product-price">
+                                            {formatPrice(product.price)}
+                                        </span>
+                                    </div>
+                                </Link>
+                            );
+                        })}
                     </div>
                 ) : (
                     <div className="search-empty">
                         <h2>No pieces found.</h2>
+
                         <p>
                             Try another search term or explore our collections.
                         </p>

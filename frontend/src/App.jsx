@@ -17,6 +17,7 @@ import Products from "./pages/public/Products";
 import ProductDetails from "./pages/public/ProductDetails";
 import Addresses from "./pages/public/Addresses";
 import Orders from "./pages/public/Orders";
+import OrderDetails from "./pages/public/OrderDetails";
 
 import AdminOrders from "./pages/admin/AdminOrders";
 import AdminOrderDetails from "./pages/admin/AdminOrderDetail";
@@ -100,6 +101,17 @@ function App() {
                         <>
                             <Navbar />
                             <Orders />
+                        </>
+                    }
+                />
+
+                {/* INDIVIDUAL ORDER DETAILS */}
+                <Route
+                    path="account/orders/:orderId"
+                    element={
+                        <>
+                            <Navbar />
+                            <OrderDetails />
                         </>
                     }
                 />

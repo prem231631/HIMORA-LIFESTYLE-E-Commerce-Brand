@@ -90,9 +90,7 @@ function OrderDetails() {
 
         if (!token) {
             navigate("/login", {
-                state: {
-                    from: `/account/orders/${orderId}`,
-                },
+                state: { from: `/account/orders/${orderId}` },
                 replace: true,
             });
             return;
@@ -116,9 +114,7 @@ function OrderDetails() {
                 localStorage.removeItem("token");
 
                 navigate("/login", {
-                    state: {
-                        from: `/account/orders/${orderId}`,
-                    },
+                    state: { from: `/account/orders/${orderId}` },
                     replace: true,
                 });
                 return;
@@ -134,8 +130,7 @@ function OrderDetails() {
                 throw new Error("Unable to load this order.");
             }
 
-            const data = await response.json();
-            setOrder(data);
+            setOrder(await response.json());
         } catch (err) {
             setError(err.message || "Something went wrong.");
         } finally {
@@ -150,8 +145,13 @@ function OrderDetails() {
     const handleCancelOrder = async () => {
         if (!order || cancelling) return;
 
+        if (String(order.status).toUpperCase() !== "PENDING") {
+            setCancelError("Only pending orders can be cancelled.");
+            return;
+        }
+
         const confirmed = window.confirm(
-            "Are you sure you want to cancel this order? This action cannot be undone."
+            "Are you sure you want to cancel this order?"
         );
 
         if (!confirmed) return;
@@ -160,9 +160,7 @@ function OrderDetails() {
 
         if (!token) {
             navigate("/login", {
-                state: {
-                    from: `/account/orders/${orderId}`,
-                },
+                state: { from: `/account/orders/${orderId}` },
                 replace: true,
             });
             return;
@@ -181,6 +179,9 @@ function OrderDetails() {
                         Authorization: `Bearer ${token}`,
                         "Content-Type": "application/json",
                     },
+                    body: JSON.stringify({
+                        reason: "Customer requested cancellation",
+                    }),
                 }
             );
 
@@ -191,28 +192,27 @@ function OrderDetails() {
                 localStorage.removeItem("token");
 
                 navigate("/login", {
-                    state: {
-                        from: `/account/orders/${orderId}`,
-                    },
+                    state: { from: `/account/orders/${orderId}` },
                     replace: true,
                 });
                 return;
             }
 
             if (!response.ok) {
-                const detail =
-                    typeof data.detail === "string"
-                        ? data.detail
-                        : "Unable to cancel this order.";
+                const detail = Array.isArray(data.detail)
+                    ? data.detail
+                          .map((item) => item.msg || "Invalid request")
+                          .join(", ")
+                    : typeof data.detail === "string"
+                      ? data.detail
+                      : "Unable to cancel this order.";
 
                 throw new Error(detail);
             }
 
-            setCancelMessage(
-                "Your order has been cancelled successfully."
-            );
+            setCancelMessage("Your order has been cancelled successfully.");
 
-            // Reload the order so the displayed status is up to date.
+            // Refresh the order to show the latest status and history.
             await loadOrder();
         } catch (err) {
             setCancelError(
@@ -227,8 +227,21 @@ function OrderDetails() {
         .trim()
         .toUpperCase();
 
-    // Keep the button hidden for orders that are no longer pending.
     const canCancel = normalizedStatus === "PENDING";
+
+    const subtotal = order?.subtotal ?? 0;
+    const shippingFee = order?.shipping_fee ?? 0;
+    const total = order?.total_amount ?? order?.total ?? 0;
+
+    const shippingAddress = order?.shipping_address || {
+        full_name: order?.shipping_full_name,
+        phone: order?.shipping_phone,
+        address_line: order?.shipping_address_line,
+        city: order?.shipping_city,
+        province: order?.shipping_province,
+        landmark: order?.shipping_landmark,
+        postal_code: order?.shipping_postal_code,
+    };
 
     return (
         <main className="order-details-page">
@@ -255,11 +268,7 @@ function OrderDetails() {
                         <AlertCircle size={27} />
                         <h1>Order unavailable</h1>
                         <p>{error}</p>
-
-                        <button
-                            type="button"
-                            onClick={loadOrder}
-                        >
+                        <button type="button" onClick={loadOrder}>
                             Try again
                         </button>
                     </section>
@@ -269,9 +278,7 @@ function OrderDetails() {
                             <p className="order-details-eyebrow">
                                 HIMORA LIFESTYLE
                             </p>
-
                             <h1>Order Details</h1>
-
                             <p>
                                 Thank you for choosing pieces made to
                                 accompany your everyday life.
@@ -282,20 +289,14 @@ function OrderDetails() {
                             <div className="order-confirmation-icon">
                                 {statusIcon(order.status)}
                             </div>
-
                             <div>
                                 <p className="order-confirmation-label">
                                     ORDER STATUS
                                 </p>
-
                                 <h2>{readableStatus(order.status)}</h2>
-
                                 <p>
                                     Order placed{" "}
-                                    {formatDate(
-                                        order.created_at ||
-                                            order.order_date
-                                    )}
+                                    {formatDate(order.created_at)}
                                 </p>
                             </div>
                         </section>
@@ -306,7 +307,6 @@ function OrderDetails() {
                                     <p className="order-details-eyebrow">
                                         ORDER REFERENCE
                                     </p>
-
                                     <h2>
                                         {order.order_number ||
                                             `Order #${order.id}`}
@@ -314,9 +314,7 @@ function OrderDetails() {
                                 </div>
 
                                 <span
-                                    className={`order-details-status ${String(
-                                        order.status || "PENDING"
-                                    )
+                                    className={`order-details-status ${normalizedStatus
                                         .toLowerCase()
                                         .replaceAll("_", "-")}`}
                                 >
@@ -336,10 +334,7 @@ function OrderDetails() {
                                         {order.items.map((item, index) => (
                                             <article
                                                 className="order-details-item"
-                                                key={
-                                                    item.id ??
-                                                    `${item.product_name || item.name || "item"}-${index}`
-                                                }
+                                                key={item.id ?? index}
                                             >
                                                 <div className="order-item-placeholder">
                                                     <Package size={22} />
@@ -353,9 +348,7 @@ function OrderDetails() {
                                                     </h4>
 
                                                     {item.sku && (
-                                                        <p>
-                                                            SKU: {item.sku}
-                                                        </p>
+                                                        <p>SKU: {item.sku}</p>
                                                     )}
 
                                                     {(item.size ||
@@ -381,7 +374,6 @@ function OrderDetails() {
                                                         item.subtotal ??
                                                             Number(
                                                                 item.unit_price ??
-                                                                    item.price ??
                                                                     0
                                                             ) *
                                                                 Number(
@@ -395,8 +387,7 @@ function OrderDetails() {
                                     </div>
                                 ) : (
                                     <p className="order-details-muted">
-                                        Item information isn't available in
-                                        this response.
+                                        Item information isn't available.
                                     </p>
                                 )}
                             </div>
@@ -409,27 +400,21 @@ function OrderDetails() {
 
                                 <div className="order-price-row">
                                     <span>Subtotal</span>
-                                    <span>
-                                        {formatCurrency(order.subtotal)}
-                                    </span>
+                                    <span>{formatCurrency(subtotal)}</span>
                                 </div>
 
                                 <div className="order-price-row">
                                     <span>Shipping</span>
                                     <span>
-                                        {Number(order.shipping_fee || 0) === 0
+                                        {Number(shippingFee) === 0
                                             ? "Complimentary"
-                                            : formatCurrency(
-                                                  order.shipping_fee
-                                              )}
+                                            : formatCurrency(shippingFee)}
                                     </span>
                                 </div>
 
                                 <div className="order-price-row order-grand-total">
                                     <strong>Total</strong>
-                                    <strong>
-                                        {formatCurrency(order.total)}
-                                    </strong>
+                                    <strong>{formatCurrency(total)}</strong>
                                 </div>
 
                                 <div className="order-payment-information">
@@ -442,12 +427,13 @@ function OrderDetails() {
                                             )}
                                         </strong>
                                     </div>
-
                                     <div>
                                         <span>Payment status</span>
                                         <strong>
                                             {readableStatus(
                                                 order.payment_status ||
+                                                    order.payment
+                                                        ?.payment_status ||
                                                     "PENDING"
                                             )}
                                         </strong>
@@ -455,58 +441,38 @@ function OrderDetails() {
                                 </div>
                             </div>
 
-                            {order.shipping_address && (
-                                <div className="order-details-section">
-                                    <h3>
-                                        <MapPin size={18} />
-                                        Delivery address
-                                    </h3>
+                            {shippingAddress &&
+                                (shippingAddress.full_name ||
+                                    shippingAddress.address_line) && (
+                                    <div className="order-details-section">
+                                        <h3>
+                                            <MapPin size={18} />
+                                            Delivery address
+                                        </h3>
 
-                                    <div className="order-delivery-address">
-                                        {typeof order.shipping_address ===
-                                        "string" ? (
-                                            <p>{order.shipping_address}</p>
-                                        ) : (
-                                            <>
-                                                {order.shipping_address
-                                                    .full_name && (
-                                                    <strong>
-                                                        {
-                                                            order.shipping_address
-                                                                .full_name
-                                                        }
-                                                    </strong>
-                                                )}
-
-                                                {order.shipping_address
-                                                    .phone && (
-                                                    <p>
-                                                        {
-                                                            order.shipping_address
-                                                                .phone
-                                                        }
-                                                    </p>
-                                                )}
-
-                                                <p>
-                                                    {[
-                                                        order.shipping_address
-                                                            .address_line,
-                                                        order.shipping_address
-                                                            .city,
-                                                        order.shipping_address
-                                                            .province,
-                                                        order.shipping_address
-                                                            .postal_code,
-                                                    ]
-                                                        .filter(Boolean)
-                                                        .join(", ")}
-                                                </p>
-                                            </>
-                                        )}
+                                        <div className="order-delivery-address">
+                                            {shippingAddress.full_name && (
+                                                <strong>
+                                                    {shippingAddress.full_name}
+                                                </strong>
+                                            )}
+                                            {shippingAddress.phone && (
+                                                <p>{shippingAddress.phone}</p>
+                                            )}
+                                            <p>
+                                                {[
+                                                    shippingAddress.address_line,
+                                                    shippingAddress.landmark,
+                                                    shippingAddress.city,
+                                                    shippingAddress.province,
+                                                    shippingAddress.postal_code,
+                                                ]
+                                                    .filter(Boolean)
+                                                    .join(", ")}
+                                            </p>
+                                        </div>
                                     </div>
-                                </div>
-                            )}
+                                )}
 
                             {Array.isArray(order.status_history) &&
                                 order.status_history.length > 0 && (
@@ -521,19 +487,15 @@ function OrderDetails() {
                                                 (entry, index) => (
                                                     <div
                                                         className="order-timeline-entry"
-                                                        key={
-                                                            entry.id ?? index
-                                                        }
+                                                        key={entry.id ?? index}
                                                     >
                                                         <span className="order-timeline-dot" />
-
                                                         <div>
                                                             <strong>
                                                                 {readableStatus(
                                                                     entry.status
                                                                 )}
                                                             </strong>
-
                                                             {entry.created_at && (
                                                                 <p>
                                                                     {formatDate(
@@ -541,7 +503,6 @@ function OrderDetails() {
                                                                     )}
                                                                 </p>
                                                             )}
-
                                                             {entry.note && (
                                                                 <p>
                                                                     {entry.note}
@@ -568,9 +529,7 @@ function OrderDetails() {
                             <button
                                 type="button"
                                 className="order-details-secondary-button"
-                                onClick={() =>
-                                    navigate("/account/orders")
-                                }
+                                onClick={() => navigate("/account/orders")}
                             >
                                 View all orders
                             </button>

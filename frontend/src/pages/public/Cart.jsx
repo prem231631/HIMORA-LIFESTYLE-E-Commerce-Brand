@@ -112,6 +112,7 @@ function Cart() {
             }
 
             setCart(data);
+            window.dispatchEvent(new Event("himora-cart-updated"));
         } catch (err) {
             setError(err.message || "Unable to update quantity.");
         } finally {
@@ -152,6 +153,7 @@ function Cart() {
             }
 
             setCart(data);
+            window.dispatchEvent(new Event("himora-cart-updated"));
         } catch (err) {
             setError(err.message || "Unable to remove this item.");
         } finally {

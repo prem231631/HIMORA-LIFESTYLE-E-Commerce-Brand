@@ -1,6 +1,7 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 
 import Navbar from "./components/layout/Navbar";
+import Search from "./pages/public/Search";
 import Hero from "./components/layout/Hero";
 import NewCollection from "./components/layout/NewCollection";
 import EyewearSection from "./components/layout/EyewearSection";
@@ -43,7 +44,15 @@ function App() {
                     path="/"
                     element={<HomePage />}
                 />
-                
+
+                {/* SEARCH */}
+                <Route path="/search" element={
+                    <>
+                        <Navbar />\
+                        <search />
+                    </>
+                } />
+
                 {/* COLLECTIONS */}
                 <Route path="/collections" element={
                     <>

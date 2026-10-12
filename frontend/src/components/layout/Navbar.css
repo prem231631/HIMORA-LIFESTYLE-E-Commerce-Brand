@@ -221,6 +221,56 @@
     text-transform: uppercase;
 }
 
+/* Signed-in customer controls */
+.navbar-account {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.navbar-account-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+}
+
+.navbar-account-name {
+    max-width: 110px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+}
+
+.navbar-actions .navbar-logout-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px;
+}
+
+.mobile-account-greeting {
+    margin: 0;
+    padding: 12px 0;
+    color: var(--color-muted, #777);
+    font-size: 12px;
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 900px) {
+    .navbar-account-name {
+        display: none;
+    }
+}
+
+@media (max-width: 600px) {
+    .navbar-account {
+        display: none;
+    }
+}
+
 /* Tablet */
 
 @media (max-width: 1000px) {

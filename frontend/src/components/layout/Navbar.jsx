@@ -1,10 +1,10 @@
-
 import {
     Search,
     UserRound,
     ShoppingBag,
     Menu,
     X,
+    LogOut,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -21,6 +21,7 @@ const API_BASE_URL =
 function Navbar() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [bagCount, setBagCount] = useState(0);
+    const [currentUser, setCurrentUser] = useState(null);
 
     const navigate = useNavigate();
     const location = useLocation();
@@ -29,28 +30,65 @@ function Navbar() {
         setMobileMenuOpen(false);
     };
 
+    const refreshAuthState = useCallback(() => {
+        const token = localStorage.getItem("access_token");
+
+        if (!token) {
+            setCurrentUser(null);
+            setBagCount(0);
+            return;
+        }
+
+        try {
+            const user = JSON.parse(
+                localStorage.getItem("user") || "null"
+            );
+
+            setCurrentUser(user);
+        } catch {
+            setCurrentUser(null);
+        }
+    }, []);
+
     const handleAccountClick = () => {
         const token = localStorage.getItem("access_token");
 
-        if (token) {
-            let user = null;
-
-            try {
-                user = JSON.parse(
-                    localStorage.getItem("user") || "null"
-                );
-            } catch {
-                user = null;
-            }
-
-            if (user?.role === "admin") {
-                navigate("/admin/orders");
-            } else {
-                navigate("/account");
-            }
-        } else {
+        if (!token) {
             navigate("/login");
+            return;
         }
+
+        let user = null;
+
+        try {
+            user = JSON.parse(
+                localStorage.getItem("user") || "null"
+            );
+        } catch {
+            user = null;
+        }
+
+        if (user?.role === "admin") {
+            navigate("/admin/orders");
+        } else {
+            navigate("/account");
+        }
+    };
+
+    const handleLogout = () => {
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("user");
+        localStorage.removeItem("userName");
+        localStorage.removeItem("isAdmin");
+
+        setCurrentUser(null);
+        setBagCount(0);
+        closeMobileMenu();
+
+        window.dispatchEvent(new Event("himora-auth-updated"));
+        window.dispatchEvent(new Event("himora-cart-updated"));
+
+        navigate("/", { replace: true });
     };
 
     const fetchBagCount = useCallback(async () => {
@@ -81,7 +119,6 @@ function Navbar() {
 
             const cart = await response.json();
 
-            // Count total units, not just distinct product rows.
             const count = Array.isArray(cart.items)
                 ? cart.items.reduce(
                     (total, item) =>
@@ -92,17 +129,30 @@ function Navbar() {
 
             setBagCount(count);
         } catch (error) {
-            console.error("Unable to fetch shopping bag count:", error);
+            console.error(
+                "Unable to fetch shopping bag count:",
+                error
+            );
         }
     }, []);
 
-    // Refresh when navigating between pages.
+    // Refresh authentication and cart state on navigation.
     useEffect(() => {
+        refreshAuthState();
         fetchBagCount();
-    }, [fetchBagCount, location.pathname]);
+    }, [
+        location.pathname,
+        refreshAuthState,
+        fetchBagCount,
+    ]);
 
-    // Refresh when the cart changes in another component or tab.
+    // Respond to login, logout, and cart changes.
     useEffect(() => {
+        const handleAuthUpdated = () => {
+            refreshAuthState();
+            fetchBagCount();
+        };
+
         const handleCartUpdated = () => {
             fetchBagCount();
         };
@@ -112,18 +162,32 @@ function Navbar() {
                 event.key === "access_token" ||
                 event.key === "user"
             ) {
+                refreshAuthState();
                 fetchBagCount();
             }
         };
+
+        window.addEventListener(
+            "himora-auth-updated",
+            handleAuthUpdated
+        );
 
         window.addEventListener(
             "himora-cart-updated",
             handleCartUpdated
         );
 
-        window.addEventListener("storage", handleStorageChange);
+        window.addEventListener(
+            "storage",
+            handleStorageChange
+        );
 
         return () => {
+            window.removeEventListener(
+                "himora-auth-updated",
+                handleAuthUpdated
+            );
+
             window.removeEventListener(
                 "himora-cart-updated",
                 handleCartUpdated
@@ -134,7 +198,15 @@ function Navbar() {
                 handleStorageChange
             );
         };
-    }, [fetchBagCount]);
+    }, [refreshAuthState, fetchBagCount]);
+
+    const isAdmin = currentUser?.role === "admin";
+
+    const displayName =
+        currentUser?.full_name ||
+        currentUser?.name ||
+        localStorage.getItem("userName") ||
+        "My Account";
 
     return (
         <header className="site-header">
@@ -177,26 +249,61 @@ function Navbar() {
                         <Search size={19} strokeWidth={1.5} />
                     </button>
 
-                    <button
-                        type="button"
-                        aria-label="Account"
-                        onClick={handleAccountClick}
-                    >
-                        <UserRound size={19} strokeWidth={1.5} />
-                    </button>
+                    {currentUser ? (
+                        <div className="navbar-account">
+                            <button
+                                type="button"
+                                className="navbar-account-button"
+                                aria-label={`Account: ${displayName}`}
+                                title={displayName}
+                                onClick={handleAccountClick}
+                            >
+                                <UserRound
+                                    size={19}
+                                    strokeWidth={1.5}
+                                />
+                                <span className="navbar-account-name">
+                                    {displayName}
+                                </span>
+                            </button>
+
+                            <button
+                                type="button"
+                                className="navbar-logout-button"
+                                onClick={handleLogout}
+                                aria-label="Log out"
+                                title="Log out"
+                            >
+                                <LogOut
+                                    size={17}
+                                    strokeWidth={1.5}
+                                />
+                            </button>
+                        </div>
+                    ) : (
+                        <button
+                            type="button"
+                            aria-label="Login or create account"
+                            title="Login / Register"
+                            onClick={() => navigate("/login")}
+                        >
+                            <UserRound
+                                size={19}
+                                strokeWidth={1.5}
+                            />
+                        </button>
+                    )}
 
                     <button
                         type="button"
                         className="navbar-bag"
                         aria-label={`Shopping bag, ${bagCount} items`}
                         onClick={() => {
-                            const token = localStorage.getItem("access_token");
-
-                            if(token){
+                            if (localStorage.getItem("access_token")) {
                                 navigate("/cart");
                             } else {
                                 navigate("/login", {
-                                    state: {from: "/cart"},
+                                    state: { from: "/cart" },
                                 });
                             }
                         }}
@@ -217,7 +324,9 @@ function Navbar() {
                 }`}
             >
                 <div className="mobile-menu-header">
-                    <span className="mobile-menu-title">MENU</span>
+                    <span className="mobile-menu-title">
+                        MENU
+                    </span>
 
                     <button
                         type="button"
@@ -232,7 +341,10 @@ function Navbar() {
                     <Link to="/" onClick={closeMobileMenu}>
                         New
                     </Link>
-                    <Link to="/collections" onClick={closeMobileMenu}>
+                    <Link
+                        to="/collections"
+                        onClick={closeMobileMenu}
+                    >
                         Collections
                     </Link>
                     <Link to="/eyewear" onClick={closeMobileMenu}>
@@ -241,12 +353,21 @@ function Navbar() {
                     <Link to="/apparel" onClick={closeMobileMenu}>
                         Apparel
                     </Link>
-                    <Link to="/accessories" onClick={closeMobileMenu}>
+                    <Link
+                        to="/accessories"
+                        onClick={closeMobileMenu}
+                    >
                         Accessories
                     </Link>
                 </div>
 
                 <div className="mobile-menu-footer">
+                    {currentUser && (
+                        <p className="mobile-account-greeting">
+                            Signed in as {displayName}
+                        </p>
+                    )}
+
                     <button
                         type="button"
                         onClick={() => {
@@ -254,7 +375,11 @@ function Navbar() {
                             handleAccountClick();
                         }}
                     >
-                        Account
+                        {currentUser
+                            ? isAdmin
+                                ? "Admin Dashboard"
+                                : "My Account"
+                            : "Login / Register"}
                     </button>
 
                     <button
@@ -272,19 +397,26 @@ function Navbar() {
                         onClick={() => {
                             closeMobileMenu();
 
-                            const token = localStorage.getItem("access_token");
-
-                            if(token){
+                            if (localStorage.getItem("access_token")) {
                                 navigate("/cart");
                             } else {
                                 navigate("/login", {
-                                    state: {from: "/cart"},
+                                    state: { from: "/cart" },
                                 });
                             }
                         }}
                     >
                         Shopping Bag ({bagCount})
                     </button>
+
+                    {currentUser && (
+                        <button
+                            type="button"
+                            onClick={handleLogout}
+                        >
+                            Log Out
+                        </button>
+                    )}
                 </div>
             </div>
         </header>

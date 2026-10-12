@@ -9,7 +9,7 @@ import Collections from "./pages/public/Collections";
 import Eyewear from "./pages/public/Eyewear";
 import Apparel from "./pages/public/Apparel";
 import Accessories from "./pages/public/Accessories";
-
+import Products from "./pages/public/Products";
 import ProductDetails from "./pages/public/ProductDetails";
 
 import AdminOrders from "./pages/admin/AdminOrders";
@@ -83,6 +83,17 @@ function App() {
                         <>
                             <Navbar />
                             <ProductDetails />
+                        </>
+                    }
+                />
+
+                {/* PRODUCTS */}
+                <Route
+                    path="/products"
+                    element={
+                        <>
+                            <Navbar />
+                            <Products />
                         </>
                     }
                 />

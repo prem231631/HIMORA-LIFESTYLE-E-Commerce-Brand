@@ -257,6 +257,29 @@
 }
 
 
+.product-details-feedback {
+    margin: 14px 0 0;
+    font-family: "Manrope", sans-serif;
+    font-size: 13px;
+    line-height: 1.7;
+}
+
+.product-details-feedback.is-success {
+    color: #26352d;
+}
+
+.product-details-feedback.is-error {
+    color: #a3342a;
+}
+
+.product-details-feedback a {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    margin-left: 4px;
+}
+
+
 @media (max-width: 900px) {
     .product-details-page {
         padding-top: 120px;

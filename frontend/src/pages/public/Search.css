@@ -1,0 +1,226 @@
+
+.search-page {
+    min-height: 100vh;
+    background: #f7f5f0;
+    color: #111111;
+}
+
+.search-page-header {
+    padding: 130px 7vw 75px;
+    border-bottom: 1px solid #d8d2c8;
+}
+
+.search-page-eyebrow {
+    margin: 0 0 30px;
+    font-family: "Manrope", sans-serif;
+    font-size: 10px;
+    letter-spacing: 0.17em;
+    text-transform: uppercase;
+    color: #777168;
+}
+
+.search-page-header h1 {
+    margin: 0;
+    font-family: "Cormorant Garamond", serif;
+    font-size: clamp(68px, 9vw, 118px);
+    font-weight: 400;
+    line-height: 0.86;
+    letter-spacing: -0.045em;
+}
+
+.search-page-description {
+    max-width: 430px;
+    margin: 32px 0 0;
+    font-family: "Manrope", sans-serif;
+    font-size: 13px;
+    line-height: 1.8;
+    color: #777168;
+}
+
+.search-content {
+    padding: 55px 7vw 110px;
+}
+
+.search-form {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    border-bottom: 1px solid #111111;
+    padding: 0 0 18px;
+}
+
+.search-form input {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: #111111;
+    font-family: "Manrope", sans-serif;
+    font-size: 16px;
+}
+
+.search-form input::placeholder {
+    color: #a59d92;
+}
+
+.search-clear {
+    border: none;
+    background: transparent;
+    color: #777168;
+    cursor: pointer;
+    font-family: "Manrope", sans-serif;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.search-results-header {
+    margin: 38px 0 24px;
+    font-family: "Manrope", sans-serif;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    color: #777168;
+}
+
+.search-suggestions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.search-suggestions button {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 22px 0;
+    border: none;
+    border-bottom: 1px solid #ded9d1;
+    background: transparent;
+    color: #111111;
+    font-family: "Cormorant Garamond", serif;
+    font-size: 31px;
+    text-align: left;
+    cursor: pointer;
+}
+
+.search-suggestions button svg {
+    transition: transform 0.2s ease;
+}
+
+.search-suggestions button:hover svg {
+    transform: translate(3px, -3px);
+}
+
+.search-results-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 26px;
+}
+
+.search-product {
+    color: #111111;
+    text-decoration: none;
+}
+
+.search-product-image {
+    aspect-ratio: 0.95 / 1;
+    overflow: hidden;
+    background: #eeece6;
+}
+
+.search-product-image img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.6s ease;
+}
+
+.search-product:hover img {
+    transform: scale(1.03);
+}
+
+.search-product-info {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding-top: 20px;
+}
+
+.search-product-info > div > span,
+.search-product-price {
+    font-family: "Manrope", sans-serif;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    color: #777168;
+}
+
+.search-product-info h2 {
+    margin: 7px 0;
+    font-family: "Cormorant Garamond", serif;
+    font-size: 32px;
+    font-weight: 400;
+}
+
+.search-product-info p {
+    margin: 0;
+    font-family: "Manrope", sans-serif;
+    font-size: 12px;
+    color: #777168;
+}
+
+.search-product-price {
+    padding-top: 2px;
+    white-space: nowrap;
+}
+
+.search-empty {
+    padding: 65px 0;
+}
+
+.search-empty h2 {
+    margin: 0 0 12px;
+    font-family: "Cormorant Garamond", serif;
+    font-size: 42px;
+    font-weight: 400;
+}
+
+.search-empty p {
+    font-family: "Manrope", sans-serif;
+    font-size: 13px;
+    color: #777168;
+}
+
+.search-empty a {
+    display: inline-block;
+    margin-top: 18px;
+    padding-bottom: 7px;
+    border-bottom: 1px solid #111111;
+    color: #111111;
+    font-family: "Manrope", sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-decoration: none;
+    text-transform: uppercase;
+}
+
+@media (max-width: 600px) {
+    .search-page-header {
+        padding: 95px 6vw 55px;
+    }
+
+    .search-content {
+        padding: 38px 6vw 80px;
+    }
+
+    .search-results-grid {
+        grid-template-columns: 1fr;
+        gap: 35px;
+    }
+
+    .search-form input {
+        font-size: 14px;
+    }
+}

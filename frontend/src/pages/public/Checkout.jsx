@@ -4,6 +4,7 @@ import {
   ArrowLeft,
   ArrowRight,
   CheckCircle2,
+  Image as ImageIcon,
   MapPin,
   Package,
   ShieldCheck,
@@ -35,6 +36,39 @@ function getErrorMessage(data, fallback) {
   }
 
   return fallback;
+}
+
+/**
+ * Converts a relative backend image path into a complete URL.
+ *
+ * Examples:
+ * /uploads/products/example.webp
+ * -> http://localhost:8000/uploads/products/example.webp
+ *
+ * https://example.com/image.webp
+ * -> unchanged
+ */
+function getImageUrl(imageUrl) {
+  if (!imageUrl || typeof imageUrl !== "string") {
+    return null;
+  }
+
+  const trimmedUrl = imageUrl.trim();
+
+  if (!trimmedUrl) {
+    return null;
+  }
+
+  if (
+    trimmedUrl.startsWith("https://") ||
+    trimmedUrl.startsWith("http://")
+  ) {
+    return trimmedUrl;
+  }
+
+  const normalizedPath = trimmedUrl.replace(/^\/+/, "");
+
+  return `${API_BASE_URL.replace(/\/+$/, "")}/${normalizedPath}`;
 }
 
 function formatPrice(value) {
@@ -79,8 +113,10 @@ function Checkout() {
         fetch(`${API_BASE_URL}/api/cart`, { headers }),
       ]);
 
-      const addressData = await addressResponse.json();
-      const cartData = await cartResponse.json();
+      const [addressData, cartData] = await Promise.all([
+        addressResponse.json(),
+        cartResponse.json(),
+      ]);
 
       if (
         addressResponse.status === 401 ||
@@ -90,10 +126,13 @@ function Checkout() {
         localStorage.removeItem("token");
         localStorage.removeItem("user");
 
+        window.dispatchEvent(new Event("himora-auth-updated"));
+
         navigate("/login", {
           replace: true,
           state: { from: "/checkout" },
         });
+
         return;
       }
 
@@ -224,10 +263,13 @@ function Checkout() {
         localStorage.removeItem("token");
         localStorage.removeItem("user");
 
+        window.dispatchEvent(new Event("himora-auth-updated"));
+
         navigate("/login", {
           replace: true,
           state: { from: "/checkout" },
         });
+
         return;
       }
 
@@ -300,13 +342,20 @@ function Checkout() {
         </section>
 
         {error && (
-          <div className="checkout-alert checkout-alert-error" role="alert">
+          <div
+            className="checkout-alert checkout-alert-error"
+            role="alert"
+          >
             {error}
           </div>
         )}
 
-        <form className="checkout-layout" onSubmit={handlePlaceOrder}>
+        <form
+          className="checkout-layout"
+          onSubmit={handlePlaceOrder}
+        >
           <div className="checkout-main-column">
+            {/* STEP 01: DELIVERY ADDRESS */}
             <section className="checkout-section">
               <div className="checkout-section-heading">
                 <div className="checkout-section-icon">
@@ -316,7 +365,9 @@ function Checkout() {
                 <div>
                   <p className="checkout-step-label">STEP 01</p>
                   <h2>Delivery address</h2>
-                  <p>Select where your order should be delivered.</p>
+                  <p>
+                    Select where your order should be delivered.
+                  </p>
                 </div>
               </div>
 
@@ -422,6 +473,7 @@ function Checkout() {
               )}
             </section>
 
+            {/* STEP 02: DELIVERY INSTRUCTIONS */}
             <section className="checkout-section">
               <div className="checkout-section-heading">
                 <div className="checkout-section-icon">
@@ -459,6 +511,7 @@ function Checkout() {
               </div>
             </section>
 
+            {/* STEP 03: PAYMENT METHOD */}
             <section className="checkout-section">
               <div className="checkout-section-heading">
                 <div className="checkout-section-icon">
@@ -495,6 +548,7 @@ function Checkout() {
             </section>
           </div>
 
+          {/* ORDER SUMMARY */}
           <aside className="checkout-summary">
             <div className="checkout-summary-header">
               <div>
@@ -522,32 +576,86 @@ function Checkout() {
             ) : (
               <>
                 <div className="checkout-summary-items">
-                  {items.map((item) => (
-                    <div
-                      className="checkout-summary-item"
-                      key={item.id}
-                    >
-                      <div className="checkout-item-visual">
-                        <Package size={22} strokeWidth={1.2} />
-                      </div>
+                  {items.map((item) => {
+                    /*
+                     * Use the product image URL returned by the
+                     * backend cart API.
+                     *
+                     * Supports:
+                     * item.image_url
+                     * item.product_image_url
+                     * item.primary_image.image_url
+                     */
+                    const rawImageUrl =
+                      item.image_url ||
+                      item.product_image_url ||
+                      item.primary_image?.image_url ||
+                      null;
 
-                      <div className="checkout-item-details">
-                        <h3>{item.product_name}</h3>
-                        <p>
-                          {item.color || "Standard"}
-                          {item.size ? ` / ${item.size}` : ""}
-                        </p>
-                        <p>Quantity: {item.quantity}</p>
-                      </div>
+                    const imageUrl = getImageUrl(rawImageUrl);
 
-                      <div className="checkout-item-price">
-                        {formatPrice(
-                          Number(item.unit_price) *
-                            Number(item.quantity)
-                        )}
+                    return (
+                      <div
+                        className="checkout-summary-item"
+                        key={item.id}
+                      >
+                        <div className="checkout-item-visual">
+                          {imageUrl ? (
+                            <img
+                              src={imageUrl}
+                              alt={item.product_name || "HIMORA product"}
+                              className="checkout-product-image"
+                              loading="lazy"
+                              onError={(event) => {
+                                event.currentTarget.style.display = "none";
+
+                                const placeholder =
+                                  event.currentTarget.parentElement
+                                    ?.querySelector(
+                                      ".checkout-image-placeholder"
+                                    );
+
+                                if (placeholder) {
+                                  placeholder.style.display = "flex";
+                                }
+                              }}
+                            />
+                          ) : null}
+
+                          <div
+                            className="checkout-image-placeholder"
+                            style={{
+                              display: imageUrl ? "none" : "flex",
+                            }}
+                            aria-label="Product image unavailable"
+                          >
+                            <ImageIcon
+                              size={23}
+                              strokeWidth={1.3}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="checkout-item-details">
+                          <h3>{item.product_name}</h3>
+
+                          <p>
+                            {item.color || "Standard"}
+                            {item.size ? ` / ${item.size}` : ""}
+                          </p>
+
+                          <p>Quantity: {item.quantity}</p>
+                        </div>
+
+                        <div className="checkout-item-price">
+                          {formatPrice(
+                            Number(item.unit_price) *
+                              Number(item.quantity)
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 <div className="checkout-summary-divider" />
@@ -570,6 +678,7 @@ function Checkout() {
 
                 <div className="checkout-total-row">
                   <span>Total</span>
+
                   <div>
                     <strong>{formatPrice(total)}</strong>
                     <small>Inclusive of listed prices</small>
@@ -605,7 +714,9 @@ function Checkout() {
 
                 <div className="checkout-trust-note">
                   <ShieldCheck size={16} />
-                  <span>Your order is processed securely.</span>
+                  <span>
+                    Your order is processed securely.
+                  </span>
                 </div>
               </>
             )}

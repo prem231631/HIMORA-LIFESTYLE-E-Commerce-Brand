@@ -1,229 +1,228 @@
-/* =========================================================
-   HIMORA ADMIN — ORDER DETAIL
-   Luxury editorial design system
-   ========================================================= */
-
 .admin-order-detail-page {
+  width: 100%;
   min-height: 100vh;
-  padding: 40px 48px 80px;
-  background: #f7f5f0;
-  color: #111111;
+  padding: 30px;
+  background: #f8f7f4;
+  color: #191919;
+  font-family: inherit;
+  box-sizing: border-box;
 }
 
-/* ---------------------------------------------------------
-   TOP BAR
-   --------------------------------------------------------- */
+.admin-order-detail-page *,
+.admin-order-detail-page *::before,
+.admin-order-detail-page *::after {
+  box-sizing: border-box;
+}
 
 .admin-order-detail-topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 42px;
+  gap: 16px;
+  margin-bottom: 30px;
 }
 
 .admin-order-back,
 .admin-order-refresh {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  border: 1px solid #d8d2c8;
-  background: transparent;
-  color: #111111;
-  padding: 11px 16px;
-  font-family: "Manrope", sans-serif;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  justify-content: center;
+  gap: 9px;
+  min-height: 42px;
+  padding: 10px 16px;
+  border: 1px solid #dedbd4;
+  border-radius: 4px;
+  background: #fff;
+  color: #292929;
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
   transition:
-    background 180ms ease,
-    color 180ms ease,
-    border-color 180ms ease;
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .admin-order-back:hover,
 .admin-order-refresh:hover {
-  background: #111111;
-  border-color: #111111;
-  color: #ffffff;
+  border-color: #b69a65;
+  background: #f4f0e7;
 }
 
 .admin-order-refresh:disabled {
-  opacity: 0.5;
+  opacity: 0.55;
   cursor: not-allowed;
 }
 
-/* ---------------------------------------------------------
-   HEADER
-   --------------------------------------------------------- */
+.admin-order-spin {
+  animation: admin-order-rotation 1s linear infinite;
+}
+
+@keyframes admin-order-rotation {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
 
 .admin-order-detail-header {
   display: flex;
-  align-items: flex-end;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 32px;
-  padding-bottom: 32px;
-  border-bottom: 1px solid #d8d2c8;
-  margin-bottom: 32px;
+  gap: 24px;
+  padding-bottom: 26px;
+  margin-bottom: 28px;
+  border-bottom: 1px solid #e4e0d8;
 }
 
-.admin-order-detail-header h1 {
-  margin: 7px 0 10px;
-  font-family: "Cormorant Garamond", serif;
-  font-size: clamp(42px, 5vw, 64px);
-  font-weight: 500;
-  line-height: 0.95;
-  letter-spacing: -0.035em;
-}
-
-.admin-order-detail-header p {
-  margin: 0;
-  color: #756f67;
-  font-family: "Manrope", sans-serif;
-  font-size: 12px;
-  line-height: 1.6;
+.admin-order-detail-header > div {
+  min-width: 0;
 }
 
 .admin-orders-eyebrow {
-  margin: 0;
-  color: #756f67;
-  font-family: "Manrope", sans-serif;
-  font-size: 10px;
+  margin: 0 0 10px;
+  color: #a38751;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.18em;
+  letter-spacing: 2px;
   text-transform: uppercase;
 }
 
-/* ---------------------------------------------------------
-   STATUS BADGES
-   --------------------------------------------------------- */
+.admin-order-detail-header h1 {
+  margin: 0 0 10px;
+  color: #171717;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(26px, 3vw, 36px);
+  font-weight: 500;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.admin-order-detail-header > div > p:last-child {
+  margin: 0;
+  color: #77736c;
+  font-size: 13px;
+  line-height: 1.6;
+}
 
 .admin-order-status {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 34px;
-  padding: 8px 14px;
-  border: 1px solid #d8d2c8;
-  background: #ffffff;
-  color: #111111;
-  font-family: "Manrope", sans-serif;
+  flex-shrink: 0;
+  padding: 9px 13px;
+  border: 1px solid #dedbd4;
+  border-radius: 3px;
+  background: #f0eee9;
+  color: #514c43;
   font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.1em;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-align: center;
   text-transform: uppercase;
-  white-space: nowrap;
 }
 
 .admin-order-status-pending {
-  background: #ffffff;
+  border-color: #ead5a8;
+  background: #fff6df;
+  color: #89651c;
 }
 
 .admin-order-status-confirmed {
-  background: #f1eee8;
+  border-color: #c8d8ed;
+  background: #edf4fd;
+  color: #315e91;
 }
 
 .admin-order-status-processing {
-  background: #ebe7df;
+  border-color: #d8c8ed;
+  background: #f4edfc;
+  color: #704a9b;
 }
 
-.admin-order-status-shipped {
-  background: #e5e1d8;
-}
-
+.admin-order-status-shipped,
 .admin-order-status-out-for-delivery {
-  background: #dcd7cd;
+  border-color: #c6dce0;
+  background: #edf7f8;
+  color: #306b74;
 }
 
 .admin-order-status-delivered {
-  background: #26352d;
-  border-color: #26352d;
-  color: #ffffff;
+  border-color: #c8dfcf;
+  background: #edf7ef;
+  color: #326d42;
 }
 
 .admin-order-status-cancelled {
-  background: #111111;
-  border-color: #111111;
-  color: #ffffff;
+  border-color: #e7c7c3;
+  background: #fff0ee;
+  color: #a33c32;
 }
-
-/* ---------------------------------------------------------
-   MAIN GRID
-   --------------------------------------------------------- */
 
 .admin-order-detail-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.6fr) minmax(300px, 0.8fr);
-  gap: 24px;
+  grid-template-columns: minmax(0, 1fr) 340px;
   align-items: start;
+  gap: 25px;
 }
 
 .admin-order-detail-main,
 .admin-order-detail-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
   min-width: 0;
 }
 
-.admin-order-detail-main {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
 .admin-order-detail-sidebar {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
+  position: relative;
 }
-
-/* ---------------------------------------------------------
-   PANELS
-   --------------------------------------------------------- */
 
 .admin-order-panel {
-  background: #ffffff;
-  border: 1px solid #d8d2c8;
-  padding: 28px;
+  min-width: 0;
+  padding: 24px;
+  border: 1px solid #e7e3dc;
+  border-radius: 5px;
+  background: #fff;
+  box-shadow: 0 3px 12px rgb(25 25 25 / 3%);
 }
 
 .admin-order-panel-heading {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  gap: 20px;
+  gap: 16px;
   padding-bottom: 20px;
-  margin-bottom: 4px;
-  border-bottom: 1px solid #ebe7df;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #eeeae3;
+  color: #a38751;
+}
+
+.admin-order-panel-heading > div {
+  min-width: 0;
 }
 
 .admin-order-panel-heading span {
   display: block;
-  margin-bottom: 5px;
-  color: #8a837a;
-  font-family: "Manrope", sans-serif;
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: 0.16em;
+  margin-bottom: 7px;
+  color: #a38751;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
   text-transform: uppercase;
 }
 
 .admin-order-panel-heading h2 {
   margin: 0;
-  color: #111111;
-  font-family: "Cormorant Garamond", serif;
-  font-size: 29px;
+  color: #202020;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 21px;
   font-weight: 500;
-  line-height: 1;
+  line-height: 1.35;
 }
-
-.admin-order-panel-heading svg {
-  flex-shrink: 0;
-  color: #756f67;
-}
-
-/* ---------------------------------------------------------
-   ORDER ITEMS
-   --------------------------------------------------------- */
 
 .admin-order-items {
   display: flex;
@@ -232,25 +231,31 @@
 
 .admin-order-item {
   display: grid;
-  grid-template-columns: 64px minmax(0, 1fr) auto auto;
+  grid-template-columns: 62px minmax(0, 1fr) auto auto;
   align-items: center;
-  gap: 18px;
-  padding: 20px 0;
-  border-bottom: 1px solid #ebe7df;
+  gap: 16px;
+  padding: 17px 0;
+  border-bottom: 1px solid #efede8;
+}
+
+.admin-order-item:first-child {
+  padding-top: 0;
 }
 
 .admin-order-item:last-child {
-  border-bottom: 0;
+  border-bottom: none;
 }
 
 .admin-order-item-image {
-  width: 64px;
-  height: 76px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f1eee8;
-  color: #756f67;
+  width: 62px;
+  height: 72px;
+  border: 1px solid #e9e4da;
+  border-radius: 3px;
+  background: #f5f2ec;
+  color: #a38751;
 }
 
 .admin-order-item-info {
@@ -259,100 +264,85 @@
 
 .admin-order-item-info h3 {
   margin: 0 0 7px;
-  color: #111111;
-  font-family: "Cormorant Garamond", serif;
-  font-size: 23px;
-  font-weight: 500;
+  color: #222;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
 }
 
 .admin-order-item-info p {
-  margin: 3px 0;
-  color: #817a71;
-  font-family: "Manrope", sans-serif;
-  font-size: 10px;
+  margin: 4px 0 0;
+  color: #817c73;
+  font-size: 11px;
   line-height: 1.5;
+  overflow-wrap: anywhere;
 }
 
 .admin-order-item-quantity {
-  color: #756f67;
-  font-family: "Manrope", sans-serif;
-  font-size: 11px;
-  font-weight: 700;
+  color: #716b62;
+  font-size: 12px;
   white-space: nowrap;
 }
 
 .admin-order-item-price {
-  min-width: 110px;
-  color: #111111;
-  font-family: "Manrope", sans-serif;
-  font-size: 12px;
+  color: #252525;
+  font-size: 13px;
   font-weight: 700;
   text-align: right;
   white-space: nowrap;
 }
 
-/* ---------------------------------------------------------
-   TOTALS
-   --------------------------------------------------------- */
-
 .admin-order-totals {
-  padding-top: 18px;
-  border-top: 1px solid #d8d2c8;
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  padding-top: 22px;
+  margin-top: 8px;
+  border-top: 1px solid #e8e4dc;
 }
 
 .admin-order-totals > div {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 20px;
-  padding: 7px 0;
-}
-
-.admin-order-totals span {
-  color: #756f67;
-  font-family: "Manrope", sans-serif;
-  font-size: 11px;
+  gap: 18px;
+  color: #777168;
+  font-size: 12px;
 }
 
 .admin-order-totals strong {
-  color: #111111;
-  font-family: "Manrope", sans-serif;
-  font-size: 12px;
+  color: #292929;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: right;
 }
 
 .admin-order-totals .admin-order-total {
-  margin-top: 12px;
-  padding-top: 17px;
-  border-top: 1px solid #111111;
-}
-
-.admin-order-totals .admin-order-total span {
-  color: #111111;
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  padding-top: 16px;
+  margin-top: 4px;
+  border-top: 1px solid #e8e4dc;
+  color: #1c1c1c;
+  font-size: 14px;
+  font-weight: 700;
 }
 
 .admin-order-totals .admin-order-total strong {
-  font-size: 16px;
+  color: #9b7b42;
+  font-size: 20px;
 }
 
-/* ---------------------------------------------------------
-   TIMELINE
-   --------------------------------------------------------- */
-
 .admin-order-timeline {
-  position: relative;
-  padding-top: 14px;
+  display: flex;
+  flex-direction: column;
 }
 
 .admin-order-timeline-item {
   position: relative;
   display: grid;
   grid-template-columns: 14px minmax(0, 1fr);
-  gap: 16px;
-  padding: 0 0 25px;
+  gap: 14px;
+  padding-bottom: 25px;
 }
 
 .admin-order-timeline-item:last-child {
@@ -360,300 +350,219 @@
 }
 
 .admin-order-timeline-item:not(:last-child)::before {
-  content: "";
   position: absolute;
-  top: 13px;
-  left: 6px;
-  bottom: 0;
+  top: 12px;
+  bottom: -1px;
+  left: 5px;
   width: 1px;
-  background: #d8d2c8;
+  background: #ded5c5;
+  content: "";
 }
 
 .admin-order-timeline-marker {
   position: relative;
   z-index: 1;
-  width: 13px;
-  height: 13px;
-  margin-top: 2px;
-  border: 3px solid #ffffff;
-  outline: 1px solid #111111;
-  background: #111111;
+  width: 11px;
+  height: 11px;
+  margin-top: 4px;
+  border: 2px solid #b69a65;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.admin-order-timeline-item > div:last-child {
+  min-width: 0;
 }
 
 .admin-order-timeline-item strong {
   display: block;
-  margin-bottom: 4px;
-  color: #111111;
-  font-family: "Manrope", sans-serif;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  margin-bottom: 6px;
+  color: #292929;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: capitalize;
 }
 
 .admin-order-timeline-item p {
-  margin: 0 0 5px;
-  color: #756f67;
-  font-family: "Manrope", sans-serif;
-  font-size: 11px;
+  margin: 0 0 7px;
+  color: #777168;
+  font-size: 12px;
   line-height: 1.6;
+  overflow-wrap: anywhere;
 }
 
 .admin-order-timeline-item small {
-  color: #a59d92;
-  font-family: "Manrope", sans-serif;
-  font-size: 9px;
+  color: #9a948b;
+  font-size: 10px;
+  line-height: 1.5;
 }
 
-/* ---------------------------------------------------------
-   INFORMATION BLOCKS
-   --------------------------------------------------------- */
+.admin-order-status-control {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 15px;
+}
+
+.admin-order-status-control > p {
+  margin: 0;
+  color: #777168;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.admin-order-status-control > p strong {
+  color: #282828;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.admin-order-status-update {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 45px;
+  padding: 12px 16px;
+  border: 1px solid #202b24;
+  border-radius: 3px;
+  background: #202b24;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-align: center;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.admin-order-status-update:hover:not(:disabled) {
+  border-color: #9b7b42;
+  background: #9b7b42;
+  transform: translateY(-1px);
+}
+
+.admin-order-status-update:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.admin-order-status-control .admin-order-status-complete {
+  padding: 12px;
+  border: 1px solid #dce8dc;
+  border-radius: 3px;
+  background: #f0f7ef;
+  color: #427148;
+  font-size: 12px;
+}
+
+.admin-order-status-control .admin-order-status-message {
+  padding: 11px 12px;
+  border: 1px solid #dce8dc;
+  border-radius: 3px;
+  background: #f0f7ef;
+  color: #427148;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
 
 .admin-order-information {
   display: flex;
   flex-direction: column;
+  gap: 17px;
 }
 
 .admin-order-information > div {
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  padding: 14px 0;
-  border-bottom: 1px solid #ebe7df;
-}
-
-.admin-order-information > div:last-child {
-  border-bottom: 0;
-  padding-bottom: 0;
-}
-
-.admin-order-information > div:first-child {
-  padding-top: 16px;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 0;
 }
 
 .admin-order-information span {
-  color: #8a837a;
-  font-family: "Manrope", sans-serif;
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
+  color: #8a847a;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
   text-transform: uppercase;
 }
 
 .admin-order-information strong {
-  color: #111111;
-  font-family: "Manrope", sans-serif;
-  font-size: 11px;
+  max-width: 100%;
+  color: #282828;
+  font-size: 12px;
   font-weight: 600;
-  line-height: 1.55;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
-
-/* ---------------------------------------------------------
-   FULFILLMENT
-   --------------------------------------------------------- */
-
-.admin-order-status-control {
-  padding-top: 18px;
-}
-
-.admin-order-status-control > p:first-child {
-  margin: 0 0 16px;
-  color: #756f67;
-  font-family: "Manrope", sans-serif;
-  font-size: 11px;
-  line-height: 1.6;
-}
-
-.admin-order-status-control > p:first-child strong {
-  color: #111111;
-  font-weight: 800;
-  text-transform: uppercase;
-}
-
-.admin-order-status-update {
-  width: 100%;
-  min-height: 46px;
-  padding: 12px 18px;
-  border: 1px solid #111111;
-  background: #111111;
-  color: #ffffff;
-  font-family: "Manrope", sans-serif;
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition:
-    background 180ms ease,
-    color 180ms ease,
-    border-color 180ms ease;
-}
-
-.admin-order-status-update:hover {
-  background: #26352d;
-  border-color: #26352d;
-}
-
-.admin-order-status-update:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-
-.admin-order-status-complete {
-  margin: 16px 0 0;
-  padding: 12px 14px;
-  border-left: 2px solid #26352d;
-  background: #f1eee8;
-  color: #26352d;
-  font-family: "Manrope", sans-serif;
-  font-size: 10px;
-  line-height: 1.6;
-}
-
-.admin-order-status-message {
-  margin: 14px 0 0;
-  color: #26352d;
-  font-family: "Manrope", sans-serif;
-  font-size: 10px;
-  line-height: 1.6;
-}
-
-/* ---------------------------------------------------------
-   NOTES
-   --------------------------------------------------------- */
-
-.admin-order-notes {
-  margin: 18px 0 0;
-  padding: 16px;
-  background: #f7f5f0;
-  border-left: 2px solid #a59d92;
-  color: #756f67;
-  font-family: "Manrope", sans-serif;
-  font-size: 11px;
-  line-height: 1.7;
-}
-
-/* ---------------------------------------------------------
-   LOADING / ERRORS
-   --------------------------------------------------------- */
 
 .admin-order-detail-loading,
 .admin-order-detail-error {
-  min-height: 420px;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  flex-direction: column;
   gap: 16px;
-  border: 1px solid #d8d2c8;
-  background: #ffffff;
-  font-family: "Manrope", sans-serif;
-}
-
-.admin-order-detail-loading {
-  color: #756f67;
-  font-size: 12px;
-}
-
-.admin-order-detail-error {
-  color: #111111;
+  min-height: 300px;
+  padding: 35px;
+  border: 1px solid #e7e3dc;
+  border-radius: 5px;
+  background: #fff;
+  color: #777168;
+  font-size: 14px;
   text-align: center;
 }
 
 .admin-order-detail-error p {
   margin: 0;
-  color: #756f67;
-  font-size: 12px;
+  color: #a33c32;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
 }
 
 .admin-order-detail-retry {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  border: 1px solid #111111;
-  background: #111111;
-  color: #ffffff;
-  padding: 11px 16px;
-  font-family: "Manrope", sans-serif;
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  justify-content: center;
+  gap: 9px;
+  min-height: 42px;
+  padding: 10px 16px;
+  border: 1px solid #202b24;
+  border-radius: 3px;
+  background: #202b24;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
   cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.admin-order-detail-retry:hover {
+  background: #9b7b42;
+  border-color: #9b7b42;
 }
 
 .admin-order-inline-error {
-  margin-bottom: 24px;
   padding: 13px 16px;
-  border-left: 2px solid #111111;
-  background: #ebe7df;
-  color: #111111;
-  font-family: "Manrope", sans-serif;
-  font-size: 11px;
+  margin-bottom: 22px;
+  border: 1px solid #e7c7c3;
+  border-radius: 3px;
+  background: #fff0ee;
+  color: #a33c32;
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
 }
-
-/* ---------------------------------------------------------
-   REFRESH ANIMATION
-   --------------------------------------------------------- */
-
-.admin-order-spin {
-  animation: himora-order-spin 800ms linear infinite;
-}
-
-@keyframes himora-order-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* ---------------------------------------------------------
-   RESPONSIVE
-   --------------------------------------------------------- */
 
 @media (max-width: 1100px) {
-  .admin-order-detail-page {
-    padding: 32px 28px 64px;
-  }
-
   .admin-order-detail-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .admin-order-detail-sidebar {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .admin-order-detail-sidebar .admin-order-panel:first-child {
-    grid-column: 1 / -1;
-  }
-
-  .admin-order-detail-sidebar .admin-order-panel:last-child {
-    grid-column: 1 / -1;
-  }
-}
-
-@media (max-width: 720px) {
-  .admin-order-detail-page {
-    padding: 24px 16px 48px;
-  }
-
-  .admin-order-detail-topbar {
-    margin-bottom: 30px;
-  }
-
-  .admin-order-detail-header {
-    align-items: flex-start;
-    flex-direction: column;
+    grid-template-columns: minmax(0, 1fr) 300px;
     gap: 18px;
-  }
-
-  .admin-order-detail-header h1 {
-    font-size: 42px;
-  }
-
-  .admin-order-detail-sidebar {
-    display: flex;
   }
 
   .admin-order-panel {
@@ -661,55 +570,122 @@
   }
 
   .admin-order-item {
-    grid-template-columns: 56px minmax(0, 1fr);
-    gap: 14px;
+    grid-template-columns: 54px minmax(0, 1fr) auto;
+    gap: 12px;
   }
 
   .admin-order-item-image {
-    width: 56px;
-    height: 68px;
-  }
-
-  .admin-order-item-quantity {
-    grid-column: 2;
+    width: 54px;
+    height: 64px;
   }
 
   .admin-order-item-price {
-    grid-column: 2;
+    grid-column: 2 / -1;
     text-align: left;
-  }
-
-  .admin-order-panel-heading h2 {
-    font-size: 26px;
-  }
-
-  .admin-order-back,
-  .admin-order-refresh {
-    padding: 10px 12px;
-    font-size: 9px;
   }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 800px) {
+  .admin-order-detail-page {
+    padding: 22px 18px;
+  }
+
+  .admin-order-detail-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-order-detail-sidebar {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: 18px;
+  }
+
+  .admin-order-detail-sidebar > .admin-order-panel:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .admin-order-detail-header {
+    margin-bottom: 22px;
+  }
+}
+
+@media (max-width: 560px) {
+  .admin-order-detail-page {
+    padding: 17px 12px;
+  }
+
   .admin-order-detail-topbar {
-    gap: 10px;
+    margin-bottom: 24px;
   }
 
   .admin-order-back,
   .admin-order-refresh {
-    flex: 1;
-    justify-content: center;
+    min-height: 39px;
+    padding: 9px 11px;
+    font-size: 11px;
+  }
+
+  .admin-order-detail-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+    padding-bottom: 20px;
   }
 
   .admin-order-detail-header h1 {
-    font-size: 36px;
+    font-size: 27px;
   }
 
-  .admin-order-status {
-    font-size: 9px;
+  .admin-order-panel {
+    padding: 17px;
+  }
+
+  .admin-order-panel-heading {
+    padding-bottom: 16px;
+    margin-bottom: 16px;
+  }
+
+  .admin-order-panel-heading h2 {
+    font-size: 19px;
+  }
+
+  .admin-order-item {
+    grid-template-columns: 48px minmax(0, 1fr) auto;
+    gap: 10px;
+  }
+
+  .admin-order-item-image {
+    width: 48px;
+    height: 58px;
   }
 
   .admin-order-item-info h3 {
-    font-size: 20px;
+    font-size: 12px;
+  }
+
+  .admin-order-item-info p {
+    font-size: 10px;
+  }
+
+  .admin-order-item-quantity {
+    font-size: 11px;
+  }
+
+  .admin-order-item-price {
+    grid-column: 2 / -1;
+    font-size: 12px;
+  }
+
+  .admin-order-detail-sidebar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-order-detail-sidebar > .admin-order-panel:first-child {
+    grid-column: auto;
+  }
+
+  .admin-order-totals .admin-order-total strong {
+    font-size: 18px;
   }
 }

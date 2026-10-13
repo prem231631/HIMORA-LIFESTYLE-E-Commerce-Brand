@@ -2,8 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
+from app.core.security import require_admin
 from app.database.session import get_db
-from app.models import Inventory, Product, ProductVariant
+from app.models import Inventory, Product, ProductVariant, User
 from app.schemas import (
     ProductVariantCreate,
     ProductVariantResponse,
@@ -47,6 +48,7 @@ def create_product_variant(
     product_id: int,
     variant_data: ProductVariantCreate,
     db: Session = Depends(get_db),
+    admin: User = Depends(require_admin),
 ):
     get_product_or_404(product_id, db)
 
@@ -81,7 +83,6 @@ def create_product_variant(
     )
 
     db.add(inventory)
-
     db.commit()
 
     return db.scalar(
@@ -103,7 +104,10 @@ def get_product_variants(
 
     statement = (
         variant_query()
-        .where(ProductVariant.product_id == product_id)
+        .where(
+            ProductVariant.product_id == product_id,
+            ProductVariant.is_active.is_(True),
+        )
         .order_by(ProductVariant.id.asc())
     )
 
@@ -125,6 +129,7 @@ def get_product_variant(
         variant_query().where(
             ProductVariant.id == variant_id,
             ProductVariant.product_id == product_id,
+            ProductVariant.is_active.is_(True),
         )
     )
 
@@ -146,6 +151,7 @@ def update_product_variant(
     variant_id: int,
     variant_data: ProductVariantUpdate,
     db: Session = Depends(get_db),
+    admin: User = Depends(require_admin),
 ):
     get_product_or_404(product_id, db)
 
@@ -193,6 +199,7 @@ def deactivate_product_variant(
     product_id: int,
     variant_id: int,
     db: Session = Depends(get_db),
+    admin: User = Depends(require_admin),
 ):
     get_product_or_404(product_id, db)
 
@@ -205,7 +212,6 @@ def deactivate_product_variant(
         )
 
     variant.is_active = False
-
     db.commit()
 
     return db.scalar(

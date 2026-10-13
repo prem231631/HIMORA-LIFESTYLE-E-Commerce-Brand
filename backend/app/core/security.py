@@ -11,8 +11,15 @@ from app.database.session import get_db
 from app.models import User
 
 
-
 password_hash = PasswordHash.recommended()
+
+bearer_scheme = HTTPBearer()
+
+
+# =========================================================
+# PASSWORD SECURITY
+# =========================================================
+
 def hash_password(password: str) -> str:
     return password_hash.hash(password)
 
@@ -21,11 +28,12 @@ def verify_password(
     password: str,
     hashed_password: str,
 ) -> bool:
-    return password_hash.verify(
-        password,
-        hashed_password,
-    )
+    return password_hash.verify(password, hashed_password)
 
+
+# =========================================================
+# JWT TOKEN MANAGEMENT
+# =========================================================
 
 def create_access_token(user_id: int) -> str:
     expire = datetime.now(timezone.utc) + timedelta(
@@ -58,13 +66,18 @@ def decode_access_token(token: str) -> int:
 
     return int(user_id)
 
-bearer_scheme = HTTPBearer()
+
+# =========================================================
+# AUTHENTICATION
+# =========================================================
+
 def get_current_user_id(
     credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
 ) -> int:
     try:
         return decode_access_token(credentials.credentials)
-    except Exception:
+
+    except (jwt.InvalidTokenError, ValueError, TypeError):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired access token.",
@@ -78,7 +91,7 @@ def get_current_user(
 ) -> User:
     user = db.get(User, user_id)
 
-    if not user:
+    if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found.",
@@ -92,6 +105,11 @@ def get_current_user(
         )
 
     return user
+
+
+# =========================================================
+# ADMIN AUTHORIZATION
+# =========================================================
 
 def require_admin(
     current_user: User = Depends(get_current_user),

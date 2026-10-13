@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.core.security import require_admin
 from app.database.session import get_db
-from app.models import Category, Product, User
+from app.models import Category, Product, User, Inventory, ProductVariant
 from app.schemas import ProductCreate, ProductResponse, ProductUpdate
 
 

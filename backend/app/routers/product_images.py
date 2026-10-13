@@ -12,6 +12,7 @@ from fastapi import (
     status,
 )
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.security import require_admin
@@ -42,7 +43,7 @@ ALLOWED_TYPES = {
 def get_product_or_404(product_id: int, db: Session) -> Product:
     product = db.get(Product, product_id)
 
-    if not product:
+    if product is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Product not found.",
@@ -51,67 +52,55 @@ def get_product_or_404(product_id: int, db: Session) -> Product:
     return product
 
 
-@router.post(
-    "",
-    response_model=ProductImageResponse,
-    status_code=status.HTTP_201_CREATED,
-)
-def add_product_image(
+def get_image_or_404(
     product_id: int,
-    image_data: ProductImageCreate,
-    db: Session = Depends(get_db),
-    admin: User = Depends(require_admin),
-):
-    get_product_or_404(product_id, db)
-
-    if image_data.is_primary:
-        existing = db.scalars(
-            select(ProductImage).where(
-                ProductImage.product_id == product_id,
-                ProductImage.is_primary.is_(True),
-            )
-        ).all()
-
-        for item in existing:
-            item.is_primary = False
-
-    image = ProductImage(
-        product_id=product_id,
-        image_url=image_data.image_url,
-        alt_text=image_data.alt_text,
-        is_primary=image_data.is_primary,
-        sort_order=image_data.sort_order,
+    image_id: int,
+    db: Session,
+) -> ProductImage:
+    image = db.scalar(
+        select(ProductImage).where(
+            ProductImage.id == image_id,
+            ProductImage.product_id == product_id,
+        )
     )
 
-    db.add(image)
-    db.commit()
-    db.refresh(image)
+    if image is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Product image not found.",
+        )
+
     return image
 
 
-@router.post(
-    "/upload",
-    response_model=ProductImageResponse,
-    status_code=status.HTTP_201_CREATED,
-)
-async def upload_product_image(
+def set_primary_image(
     product_id: int,
-    file: UploadFile = File(...),
-    alt_text: str | None = Form(default=None),
-    db: Session = Depends(get_db),
-    admin: User = Depends(require_admin),
-):
-    get_product_or_404(product_id, db)
+    image_id: int | None,
+    db: Session,
+) -> None:
+    images = db.scalars(
+        select(ProductImage).where(
+            ProductImage.product_id == product_id,
+            ProductImage.is_primary.is_(True),
+        )
+    ).all()
 
-    extension = ALLOWED_TYPES.get(file.content_type or "")
-    if not extension:
+    for image in images:
+        if image.id != image_id:
+            image.is_primary = False
+
+
+def validate_image_file(
+    content_type: str | None,
+    content: bytes,
+) -> str:
+    extension = ALLOWED_TYPES.get(content_type or "")
+
+    if extension is None:
         raise HTTPException(
             status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
             detail="Only JPEG, PNG, and WebP images are allowed.",
         )
-
-    content = await file.read(MAX_FILE_SIZE + 1)
-    await file.close()
 
     if not content:
         raise HTTPException(
@@ -125,9 +114,11 @@ async def upload_product_image(
             detail="Image size must not exceed 5 MB.",
         )
 
-    # Verify basic file signatures rather than trusting MIME type alone.
     valid_signature = (
-        (extension == ".jpg" and content.startswith(b"\xff\xd8\xff"))
+        (
+            extension == ".jpg"
+            and content.startswith(b"\xff\xd8\xff")
+        )
         or (
             extension == ".png"
             and content.startswith(b"\x89PNG\r\n\x1a\n")
@@ -145,6 +136,74 @@ async def upload_product_image(
             detail="The file contents do not match a supported image type.",
         )
 
+    return extension
+
+
+@router.post(
+    "",
+    response_model=ProductImageResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def add_product_image(
+    product_id: int,
+    image_data: ProductImageCreate,
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_admin),
+):
+    get_product_or_404(product_id, db)
+
+    if image_data.is_primary:
+        set_primary_image(product_id, None, db)
+
+    image = ProductImage(
+        product_id=product_id,
+        image_url=image_data.image_url.strip(),
+        alt_text=(
+            image_data.alt_text.strip()
+            if image_data.alt_text
+            else None
+        ),
+        is_primary=image_data.is_primary,
+        sort_order=image_data.sort_order,
+    )
+
+    try:
+        db.add(image)
+        db.commit()
+        db.refresh(image)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="The product image could not be saved.",
+        )
+
+    return image
+
+
+@router.post(
+    "/upload",
+    response_model=ProductImageResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def upload_product_image(
+    product_id: int,
+    file: UploadFile = File(...),
+    alt_text: str | None = Form(default=None),
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_admin),
+):
+    get_product_or_404(product_id, db)
+
+    content_type = file.content_type
+
+    try:
+        content = await file.read(MAX_FILE_SIZE + 1)
+    finally:
+        await file.close()
+
+    extension = validate_image_file(content_type, content)
+
     UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
     filename = f"{uuid4().hex}{extension}"
@@ -157,21 +216,28 @@ async def upload_product_image(
         )
     )
 
+    image = ProductImage(
+        product_id=product_id,
+        image_url=f"/uploads/products/{filename}",
+        alt_text=alt_text.strip() if alt_text else None,
+        is_primary=existing_primary is None,
+        sort_order=0,
+    )
+
     try:
         destination.write_bytes(content)
-
-        image = ProductImage(
-            product_id=product_id,
-            image_url=f"/uploads/products/{filename}",
-            alt_text=alt_text,
-            is_primary=existing_primary is None,
-            sort_order=0,
-        )
-
         db.add(image)
         db.commit()
         db.refresh(image)
         return image
+
+    except IntegrityError:
+        db.rollback()
+        destination.unlink(missing_ok=True)
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="The uploaded image could not be saved.",
+        )
 
     except Exception:
         db.rollback()
@@ -192,7 +258,10 @@ def get_product_images(
     statement = (
         select(ProductImage)
         .where(ProductImage.product_id == product_id)
-        .order_by(ProductImage.sort_order, ProductImage.id)
+        .order_by(
+            ProductImage.sort_order,
+            ProductImage.id,
+        )
     )
 
     return db.scalars(statement).all()
@@ -211,38 +280,37 @@ def update_product_image(
 ):
     get_product_or_404(product_id, db)
 
-    image = db.scalar(
-        select(ProductImage).where(
-            ProductImage.id == image_id,
-            ProductImage.product_id == product_id,
-        )
-    )
-
-    if not image:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Product image not found.",
-        )
-
+    image = get_image_or_404(product_id, image_id, db)
     update_data = image_data.model_dump(exclude_unset=True)
 
-    if update_data.get("is_primary") is True:
-        existing = db.scalars(
-            select(ProductImage).where(
-                ProductImage.product_id == product_id,
-                ProductImage.is_primary.is_(True),
-                ProductImage.id != image_id,
-            )
-        ).all()
+    if "image_url" in update_data and update_data["image_url"] is not None:
+        update_data["image_url"] = update_data["image_url"].strip()
 
-        for item in existing:
-            item.is_primary = False
+        if not update_data["image_url"]:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Image URL cannot be empty.",
+            )
+
+    if "alt_text" in update_data and update_data["alt_text"] is not None:
+        update_data["alt_text"] = update_data["alt_text"].strip() or None
+
+    if update_data.get("is_primary") is True:
+        set_primary_image(product_id, image_id, db)
 
     for field, value in update_data.items():
         setattr(image, field, value)
 
-    db.commit()
-    db.refresh(image)
+    try:
+        db.commit()
+        db.refresh(image)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="The product image could not be updated.",
+        )
+
     return image
 
 
@@ -258,25 +326,23 @@ def delete_product_image(
 ):
     get_product_or_404(product_id, db)
 
-    image = db.scalar(
-        select(ProductImage).where(
-            ProductImage.id == image_id,
-            ProductImage.product_id == product_id,
-        )
-    )
-
-    if not image:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Product image not found.",
-        )
-
-    # Only remove files stored in this application's upload directory.
+    image = get_image_or_404(product_id, image_id, db)
     image_url = image.image_url
-    db.delete(image)
-    db.commit()
+
+    try:
+        db.delete(image)
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="The product image could not be deleted.",
+        )
 
     if image_url.startswith("/uploads/products/"):
         filename = image_url.rsplit("/", 1)[-1]
+
         if filename and Path(filename).name == filename:
             (UPLOAD_DIR / filename).unlink(missing_ok=True)
+
+    return None

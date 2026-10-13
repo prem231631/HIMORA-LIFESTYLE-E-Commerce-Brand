@@ -12,11 +12,23 @@ from app.routers.cart import router as cart_router
 from app.routers.addresses import router as addresses_router
 from app.routers.orders import router as orders_router
 
+from pathlib import Path
+from fastapi.staticfiles import StaticFiles
+
 app = FastAPI(
     title=settings.app_name,
     version="1.0.0",
 )
 
+
+UPLOADS_ROOT = Path(__file__).resolve().parent.parent / "uploads"
+UPLOADS_ROOT.mkdir(parents=True, exist_ok=True)
+
+app.mount(
+    "/uploads",
+    StaticFiles(directory=str(UPLOADS_ROOT)),
+    name="uploads",
+)
 
 app.add_middleware(
     CORSMiddleware,

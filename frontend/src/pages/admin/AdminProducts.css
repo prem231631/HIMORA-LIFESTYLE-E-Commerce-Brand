@@ -331,6 +331,179 @@
   color: #756f67;
 }
 
+/* PRODUCT CREATION FORM */
+
+.admin-products-form-panel {
+  margin-top: 24px;
+  padding: 28px;
+  border: 1px solid #d8d2c8;
+  background: #ffffff;
+}
+
+.admin-products-form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+  margin-bottom: 24px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid #ebe7df;
+}
+
+.admin-products-form-header h2 {
+  margin: 8px 0 0;
+  font-family: "Cormorant Garamond", serif;
+  font-size: 34px;
+  font-weight: 500;
+}
+
+.admin-products-close {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid #d8d2c8;
+  background: transparent;
+  color: #111111;
+  cursor: pointer;
+}
+
+.admin-products-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.admin-products-field {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  color: #756f67;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.admin-products-field input,
+.admin-products-field select,
+.admin-products-field textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 12px 13px;
+  border: 1px solid #d8d2c8;
+  border-radius: 0;
+  outline: 0;
+  background: #ffffff;
+  color: #111111;
+  font-family: "Manrope", sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.admin-products-field input:focus,
+.admin-products-field select:focus,
+.admin-products-field textarea:focus {
+  border-color: #111111;
+}
+
+.admin-products-field textarea {
+  resize: vertical;
+  line-height: 1.7;
+}
+
+.admin-products-field-full {
+  grid-column: 1 / -1;
+}
+
+.admin-products-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px 24px;
+  margin-top: 24px;
+  padding: 20px 0;
+  border-top: 1px solid #ebe7df;
+  border-bottom: 1px solid #ebe7df;
+}
+
+.admin-products-options label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #756f67;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.admin-products-options input {
+  accent-color: #26352d;
+}
+
+.admin-products-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.admin-products-cancel {
+  min-height: 40px;
+  padding: 10px 18px;
+  border: 1px solid #d8d2c8;
+  background: transparent;
+  color: #111111;
+  font-family: "Manrope", sans-serif;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.admin-products-cancel:hover {
+  background: #f1eee8;
+}
+
+.admin-products-form-actions button:disabled,
+.admin-products-close:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* SUCCESS MESSAGE */
+
+.admin-products-success {
+  margin-top: 20px;
+  padding: 13px 16px;
+  border-left: 2px solid #26352d;
+  background: #f0f3ef;
+  color: #26352d;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+@media (max-width: 600px) {
+  .admin-products-form-panel {
+    padding: 18px;
+  }
+
+  .admin-products-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-products-field-full {
+    grid-column: auto;
+  }
+
+  .admin-products-options {
+    flex-direction: column;
+    gap: 14px;
+  }
+}
+
 /* EMPTY / LOADING */
 
 .admin-products-empty {

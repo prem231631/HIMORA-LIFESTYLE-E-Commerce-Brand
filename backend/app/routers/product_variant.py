@@ -1,10 +1,12 @@
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.security import require_admin
 from app.database.session import get_db
-from app.models import Inventory, Product, ProductVariant, User
+from app.models import Category, Inventory, Product, ProductVariant, User
 from app.schemas import (
     ProductVariantCreate,
     ProductVariantResponse,
@@ -19,24 +21,45 @@ router = APIRouter(
 
 
 def variant_query():
-    return (
-        select(ProductVariant)
-        .options(
-            selectinload(ProductVariant.inventory),
-        )
+    return select(ProductVariant).options(
+        selectinload(ProductVariant.inventory),
     )
 
 
-def get_product_or_404(product_id: int, db: Session) -> Product:
+def get_product_or_404(
+    product_id: int,
+    db: Session,
+) -> Product:
     product = db.get(Product, product_id)
 
-    if not product:
+    if product is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Product not found.",
         )
 
     return product
+
+
+def get_variant_or_404(
+    product_id: int,
+    variant_id: int,
+    db: Session,
+) -> ProductVariant:
+    variant = db.scalar(
+        variant_query().where(
+            ProductVariant.id == variant_id,
+            ProductVariant.product_id == product_id,
+        )
+    )
+
+    if variant is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Product variant not found.",
+        )
+
+    return variant
 
 
 @router.post(
@@ -50,11 +73,25 @@ def create_product_variant(
     db: Session = Depends(get_db),
     admin: User = Depends(require_admin),
 ):
-    get_product_or_404(product_id, db)
+    product = get_product_or_404(product_id, db)
+
+    if not product.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot add variants to an inactive product.",
+        )
+
+    sku = variant_data.sku.strip()
+
+    if not sku:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="SKU cannot be empty.",
+        )
 
     existing_variant = db.scalar(
         select(ProductVariant).where(
-            ProductVariant.sku == variant_data.sku
+            ProductVariant.sku == sku,
         )
     )
 
@@ -66,30 +103,34 @@ def create_product_variant(
 
     variant = ProductVariant(
         product_id=product_id,
-        sku=variant_data.sku,
-        size=variant_data.size,
-        color=variant_data.color,
+        sku=sku,
+        size=variant_data.size.strip() if variant_data.size else None,
+        color=variant_data.color.strip() if variant_data.color else None,
         is_active=variant_data.is_active,
     )
 
-    db.add(variant)
-    db.flush()
+    try:
+        db.add(variant)
+        db.flush()
 
-    inventory = Inventory(
-        variant_id=variant.id,
-        stock_quantity=variant_data.stock_quantity,
-        reserved_quantity=0,
-        sold_quantity=0,
-    )
-
-    db.add(inventory)
-    db.commit()
-
-    return db.scalar(
-        variant_query().where(
-            ProductVariant.id == variant.id
+        inventory = Inventory(
+            variant_id=variant.id,
+            stock_quantity=variant_data.stock_quantity,
+            reserved_quantity=0,
+            sold_quantity=0,
         )
-    )
+
+        db.add(inventory)
+        db.commit()
+
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="The variant could not be created because its SKU already exists or a conflicting value was provided.",
+        )
+
+    return get_variant_or_404(product_id, variant.id, db)
 
 
 @router.get(
@@ -125,15 +166,9 @@ def get_product_variant(
 ):
     get_product_or_404(product_id, db)
 
-    variant = db.scalar(
-        variant_query().where(
-            ProductVariant.id == variant_id,
-            ProductVariant.product_id == product_id,
-            ProductVariant.is_active.is_(True),
-        )
-    )
+    variant = get_variant_or_404(product_id, variant_id, db)
 
-    if not variant:
+    if not variant.is_active:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Product variant not found.",
@@ -155,20 +190,21 @@ def update_product_variant(
 ):
     get_product_or_404(product_id, db)
 
-    variant = db.get(ProductVariant, variant_id)
-
-    if not variant or variant.product_id != product_id:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Product variant not found.",
-        )
-
+    variant = get_variant_or_404(product_id, variant_id, db)
     update_data = variant_data.model_dump(exclude_unset=True)
 
-    if "sku" in update_data:
+    if "sku" in update_data and update_data["sku"] is not None:
+        sku = update_data["sku"].strip()
+
+        if not sku:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="SKU cannot be empty.",
+            )
+
         existing_variant = db.scalar(
             select(ProductVariant).where(
-                ProductVariant.sku == update_data["sku"],
+                ProductVariant.sku == sku,
                 ProductVariant.id != variant_id,
             )
         )
@@ -179,16 +215,25 @@ def update_product_variant(
                 detail="A variant with this SKU already exists.",
             )
 
+        update_data["sku"] = sku
+
+    for field in ("size", "color"):
+        if field in update_data and update_data[field] is not None:
+            update_data[field] = update_data[field].strip() or None
+
     for field, value in update_data.items():
         setattr(variant, field, value)
 
-    db.commit()
-
-    return db.scalar(
-        variant_query().where(
-            ProductVariant.id == variant_id
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="The variant could not be updated because of a conflicting value.",
         )
-    )
+
+    return get_variant_or_404(product_id, variant_id, db)
 
 
 @router.delete(
@@ -203,19 +248,17 @@ def deactivate_product_variant(
 ):
     get_product_or_404(product_id, db)
 
-    variant = db.get(ProductVariant, variant_id)
-
-    if not variant or variant.product_id != product_id:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Product variant not found.",
-        )
+    variant = get_variant_or_404(product_id, variant_id, db)
 
     variant.is_active = False
-    db.commit()
 
-    return db.scalar(
-        variant_query().where(
-            ProductVariant.id == variant_id
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="The variant could not be deactivated.",
         )
-    )
+
+    return get_variant_or_404(product_id, variant_id, db)

@@ -41,6 +41,7 @@ from app.schemas.auth import (
     LoginRequest,
     LoginResponse,
     RegisterRequest,
+    UpdateProfileRequest,
     UserResponse,
 )
 

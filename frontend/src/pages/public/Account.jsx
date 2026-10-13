@@ -8,6 +8,10 @@ import {
     ShoppingBag,
     LoaderCircle,
     AlertCircle,
+    Pencil,
+    X,
+    Check,
+    Phone,
 } from "lucide-react";
 
 import "./Account.css";
@@ -45,6 +49,15 @@ function Account() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
+    const [editingProfile, setEditingProfile] = useState(false);
+    const [profileForm, setProfileForm] = useState({
+        full_name: "",
+        phone: "",
+    });
+    const [savingProfile, setSavingProfile] = useState(false);
+    const [profileError, setProfileError] = useState("");
+    const [profileSuccess, setProfileSuccess] = useState("");
+
     useEffect(() => {
         let cancelled = false;
 
@@ -60,24 +73,24 @@ function Account() {
             }
 
             try {
-                const storedUser = JSON.parse(
-                    localStorage.getItem("user") || "null"
-                );
+                const [profileResponse, ordersResponse] =
+                    await Promise.all([
+                        fetch(`${API_BASE_URL}/api/auth/me`, {
+                            headers: {
+                                Authorization: `Bearer ${token}`,
+                            },
+                        }),
+                        fetch(`${API_BASE_URL}/api/orders`, {
+                            headers: {
+                                Authorization: `Bearer ${token}`,
+                            },
+                        }),
+                    ]);
 
-                if (cancelled) return;
-
-                setUser(storedUser);
-
-                const response = await fetch(
-                    `${API_BASE_URL}/api/orders`,
-                    {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                        },
-                    }
-                );
-
-                if (response.status === 401) {
+                if (
+                    profileResponse.status === 401 ||
+                    ordersResponse.status === 401
+                ) {
                     localStorage.removeItem("access_token");
                     localStorage.removeItem("user");
                     localStorage.removeItem("userName");
@@ -95,20 +108,42 @@ function Account() {
                     return;
                 }
 
-                if (!response.ok) {
+                if (!profileResponse.ok) {
+                    throw new Error(
+                        "Unable to load your profile information."
+                    );
+                }
+
+                if (!ordersResponse.ok) {
                     throw new Error("Unable to load your orders.");
                 }
 
-                const data = await response.json();
+                const profile = await profileResponse.json();
+                const orderData = await ordersResponse.json();
 
-                if (!cancelled) {
-                    setOrders(Array.isArray(data) ? data : []);
-                }
+                if (cancelled) return;
+
+                setUser(profile);
+                setProfileForm({
+                    full_name: profile.full_name || "",
+                    phone: profile.phone || "",
+                });
+
+                // Keep the locally stored user information synchronized.
+                localStorage.setItem("user", JSON.stringify(profile));
+                localStorage.setItem(
+                    "userName",
+                    profile.full_name || ""
+                );
+
+                setOrders(
+                    Array.isArray(orderData) ? orderData : []
+                );
             } catch (err) {
                 if (!cancelled) {
                     setError(
                         err.message ||
-                        "Something went wrong while loading your account."
+                            "Something went wrong while loading your account."
                     );
                 }
             } finally {
@@ -132,6 +167,7 @@ function Account() {
         "HIMORA Customer";
 
     const customerEmail = user?.email || "";
+    const customerPhone = user?.phone || "";
 
     const recentOrders = [...orders]
         .sort(
@@ -140,6 +176,152 @@ function Account() {
                 new Date(a.created_at || 0).getTime()
         )
         .slice(0, 3);
+
+    function handleProfileChange(event) {
+        const { name, value } = event.target;
+
+        setProfileForm((previous) => ({
+            ...previous,
+            [name]: value,
+        }));
+
+        setProfileError("");
+        setProfileSuccess("");
+    }
+
+    function handleEditProfile() {
+        setProfileForm({
+            full_name: user?.full_name || "",
+            phone: user?.phone || "",
+        });
+
+        setProfileError("");
+        setProfileSuccess("");
+        setEditingProfile(true);
+    }
+
+    function handleCancelEdit() {
+        setProfileForm({
+            full_name: user?.full_name || "",
+            phone: user?.phone || "",
+        });
+
+        setProfileError("");
+        setProfileSuccess("");
+        setEditingProfile(false);
+    }
+
+    async function handleProfileSubmit(event) {
+        event.preventDefault();
+
+        const token = localStorage.getItem("access_token");
+        const fullName = profileForm.full_name.trim();
+        const phone = profileForm.phone.trim();
+
+        if (fullName.length < 2) {
+            setProfileError(
+                "Your full name must contain at least 2 characters."
+            );
+            return;
+        }
+
+        if (phone && (phone.length < 7 || phone.length > 30)) {
+            setProfileError(
+                "Your phone number must contain between 7 and 30 characters."
+            );
+            return;
+        }
+
+        if (!token) {
+            navigate("/login", {
+                replace: true,
+                state: { from: "/account" },
+            });
+            return;
+        }
+
+        setSavingProfile(true);
+        setProfileError("");
+        setProfileSuccess("");
+
+        try {
+            const response = await fetch(
+                `${API_BASE_URL}/api/auth/me`,
+                {
+                    method: "PATCH",
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        full_name: fullName,
+                        phone: phone || null,
+                    }),
+                }
+            );
+
+            const data = await response.json().catch(() => ({}));
+
+            if (response.status === 401) {
+                localStorage.removeItem("access_token");
+                localStorage.removeItem("user");
+                localStorage.removeItem("userName");
+                localStorage.removeItem("isAdmin");
+
+                window.dispatchEvent(
+                    new Event("himora-auth-updated")
+                );
+
+                navigate("/login", {
+                    replace: true,
+                    state: { from: "/account" },
+                });
+
+                return;
+            }
+
+            if (!response.ok) {
+                if (response.status === 409) {
+                    throw new Error(
+                        "This phone number is already registered."
+                    );
+                }
+
+                const detail = data.detail;
+
+                throw new Error(
+                    typeof detail === "string"
+                        ? detail
+                        : "Unable to update your profile. Please check your information."
+                );
+            }
+
+            setUser(data);
+            setProfileForm({
+                full_name: data.full_name || "",
+                phone: data.phone || "",
+            });
+
+            localStorage.setItem("user", JSON.stringify(data));
+            localStorage.setItem(
+                "userName",
+                data.full_name || ""
+            );
+
+            window.dispatchEvent(
+                new Event("himora-auth-updated")
+            );
+
+            setEditingProfile(false);
+            setProfileSuccess("Your profile has been updated.");
+        } catch (err) {
+            setProfileError(
+                err.message || "Something went wrong. Please try again."
+            );
+        } finally {
+            setSavingProfile(false);
+        }
+    }
 
     return (
         <main className="account-page">
@@ -246,18 +428,145 @@ function Account() {
                             />
                         </div>
 
-                        <div>
+                        <div className="account-personal-info">
                             <h3>Personal Information</h3>
                             <p>
-                                {customerEmail ||
-                                    "Your registered account details."}
+                                Update your registered account details.
                             </p>
-                            <span className="account-coming-soon">
-                                PROFILE MANAGEMENT COMING NEXT
-                            </span>
                         </div>
+
+                        {!editingProfile && (
+                            <button
+                                type="button"
+                                className="account-edit-profile-button"
+                                onClick={handleEditProfile}
+                            >
+                                <Pencil size={15} />
+                                Edit Profile
+                            </button>
+                        )}
                     </div>
                 </div>
+
+                {profileSuccess && (
+                    <div className="account-profile-message account-profile-success">
+                        <Check size={18} />
+                        <span>{profileSuccess}</span>
+                    </div>
+                )}
+
+                {editingProfile && (
+                    <section className="account-profile-editor">
+                        <div className="account-profile-editor-heading">
+                            <div>
+                                <p className="account-eyebrow">
+                                    YOUR DETAILS
+                                </p>
+                                <h3>Edit personal information</h3>
+                            </div>
+
+                            <button
+                                type="button"
+                                className="account-profile-close"
+                                onClick={handleCancelEdit}
+                                disabled={savingProfile}
+                                aria-label="Cancel editing"
+                            >
+                                <X size={19} />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleProfileSubmit}>
+                            <div className="account-profile-form-grid">
+                                <label className="account-profile-field">
+                                    <span>Full name</span>
+                                    <input
+                                        type="text"
+                                        name="full_name"
+                                        value={profileForm.full_name}
+                                        onChange={handleProfileChange}
+                                        minLength={2}
+                                        maxLength={150}
+                                        autoComplete="name"
+                                        required
+                                        disabled={savingProfile}
+                                    />
+                                </label>
+
+                                <label className="account-profile-field">
+                                    <span>Email address</span>
+                                    <input
+                                        type="email"
+                                        value={customerEmail}
+                                        readOnly
+                                        disabled
+                                        autoComplete="email"
+                                    />
+                                    <small>
+                                        Email address cannot be changed here.
+                                    </small>
+                                </label>
+
+                                <label className="account-profile-field">
+                                    <span>Phone number</span>
+                                    <div className="account-profile-phone-input">
+                                        <Phone size={17} />
+                                        <input
+                                            type="tel"
+                                            name="phone"
+                                            value={profileForm.phone}
+                                            onChange={handleProfileChange}
+                                            minLength={7}
+                                            maxLength={30}
+                                            autoComplete="tel"
+                                            placeholder="Enter your phone number"
+                                            disabled={savingProfile}
+                                        />
+                                    </div>
+                                </label>
+                            </div>
+
+                            {profileError && (
+                                <div className="account-profile-message account-profile-error">
+                                    <AlertCircle size={18} />
+                                    <span>{profileError}</span>
+                                </div>
+                            )}
+
+                            <div className="account-profile-form-actions">
+                                <button
+                                    type="button"
+                                    className="account-profile-cancel-button"
+                                    onClick={handleCancelEdit}
+                                    disabled={savingProfile}
+                                >
+                                    Cancel
+                                </button>
+
+                                <button
+                                    type="submit"
+                                    className="account-profile-save-button"
+                                    disabled={savingProfile}
+                                >
+                                    {savingProfile ? (
+                                        <>
+                                            <LoaderCircle
+                                                size={17}
+                                                className="account-spinner"
+                                            />
+                                            Saving...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Check size={17} />
+                                            Save Changes
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </form>
+                    </section>
+                )}
 
                 <div className="account-orders-section">
                     <div className="account-orders-heading">

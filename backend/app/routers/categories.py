@@ -2,8 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.security import require_admin
 from app.database.session import get_db
-from app.models import Category
+from app.models import Category, User
 from app.schemas import (
     CategoryCreate,
     CategoryResponse,
@@ -25,6 +26,7 @@ router = APIRouter(
 def create_category(
     category_data: CategoryCreate,
     db: Session = Depends(get_db),
+    admin: User = Depends(require_admin),
 ):
     existing_category = db.scalar(
         select(Category).where(
@@ -61,6 +63,7 @@ def get_categories(
 ):
     statement = (
         select(Category)
+        .where(Category.is_active.is_(True))
         .order_by(Category.name.asc())
     )
 
@@ -77,7 +80,7 @@ def get_category(
 ):
     category = db.get(Category, category_id)
 
-    if not category:
+    if not category or not category.is_active:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Category not found.",
@@ -94,6 +97,7 @@ def update_category(
     category_id: int,
     category_data: CategoryUpdate,
     db: Session = Depends(get_db),
+    admin: User = Depends(require_admin),
 ):
     category = db.get(Category, category_id)
 
@@ -141,6 +145,7 @@ def update_category(
 def deactivate_category(
     category_id: int,
     db: Session = Depends(get_db),
+    admin: User = Depends(require_admin),
 ):
     category = db.get(Category, category_id)
 

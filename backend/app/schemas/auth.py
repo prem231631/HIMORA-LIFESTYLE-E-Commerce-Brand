@@ -45,3 +45,16 @@ class LoginResponse(BaseModel):
     access_token: str
     token_type: str
     user: UserResponse
+
+
+class UpdateProfileRequest(BaseModel):
+    full_name: str = Field(
+        min_length=2,
+        max_length=150,
+    )
+
+    phone: str | None = Field(
+        default=None,
+        min_length=7,
+        max_length=30,
+    )

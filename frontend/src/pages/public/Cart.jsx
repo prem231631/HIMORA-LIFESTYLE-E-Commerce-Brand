@@ -7,11 +7,18 @@ import "./Cart.css";
 const API_BASE_URL =
     import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
-const FALLBACK_IMAGE =
-    "https://images.unsplash.com/photo-1511499767150-a48a237f0083";
+function getImageUrl(imageUrl) {
+    if (!imageUrl) return null;
+
+    if (/^https?:\/\//i.test(imageUrl)) {
+        return imageUrl;
+    }
+
+    return `${API_BASE_URL.replace(/\/$/, "")}/${imageUrl.replace(/^\//, "")}`;
+}
 
 function formatPrice(price) {
-    return `NPR ${Number(price || 0).toLocaleString("en-IN", {
+    return `NPR ${Number(price || 0).toLocaleString("en-NP", {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
     })}`;
@@ -101,9 +108,7 @@ function Cart() {
     }, [fetchCart]);
 
     const updateQuantity = async (item, quantity) => {
-        if (quantity < 1 || updatingItem !== null) {
-            return;
-        }
+        if (quantity < 1 || updatingItem !== null) return;
 
         if (quantity > item.available_quantity) {
             setError(
@@ -143,6 +148,8 @@ function Cart() {
                 localStorage.removeItem("isAdmin");
                 localStorage.removeItem("userName");
 
+                window.dispatchEvent(new Event("himora-auth-updated"));
+
                 navigate("/login", {
                     state: { from: "/cart" },
                 });
@@ -165,9 +172,7 @@ function Cart() {
     };
 
     const removeItem = async (itemId) => {
-        if (updatingItem !== null) {
-            return;
-        }
+        if (updatingItem !== null) return;
 
         const token = localStorage.getItem("access_token");
 
@@ -197,6 +202,8 @@ function Cart() {
                 localStorage.removeItem("user");
                 localStorage.removeItem("isAdmin");
                 localStorage.removeItem("userName");
+
+                window.dispatchEvent(new Event("himora-auth-updated"));
 
                 navigate("/login", {
                     state: { from: "/cart" },
@@ -236,6 +243,7 @@ function Cart() {
                 <div className="cart-message">
                     <p>HIMORA / YOUR BAG</p>
                     <h1>Your bag awaits.</h1>
+
                     <p>
                         Sign in to view the items in your shopping bag.
                     </p>
@@ -259,6 +267,7 @@ function Cart() {
             <section className="cart-header">
                 <div>
                     <p className="cart-eyebrow">HIMORA / YOUR BAG</p>
+
                     <h1>
                         Your
                         <br />
@@ -287,6 +296,7 @@ function Cart() {
                     {items.length === 0 ? (
                         <div className="cart-empty">
                             <h2>Your bag is currently empty.</h2>
+
                             <p>
                                 Discover considered pieces inspired by
                                 the Himalayas.
@@ -301,100 +311,109 @@ function Cart() {
                             </Link>
                         </div>
                     ) : (
-                        items.map((item) => (
-                            <article className="cart-item" key={item.id}>
-                                <Link
-                                    to={`/products/${item.product_slug || item.product_id}`}
-                                    className="cart-item-image"
-                                    aria-label={`View ${item.product_name}`}
+                        items.map((item) => {
+                            const imageUrl = getImageUrl(item.image_url);
+
+                            return (
+                                <article
+                                    className="cart-item"
+                                    key={item.id}
                                 >
-                                    <img
-                                        src={
-                                            item.image_url ||
-                                            FALLBACK_IMAGE
-                                        }
-                                        alt={item.product_name}
-                                        onError={(event) => {
-                                            event.currentTarget.onerror = null;
-                                            event.currentTarget.src =
-                                                FALLBACK_IMAGE;
-                                        }}
-                                    />
-                                </Link>
+                                    <Link
+                                        to={`/products/${item.product_slug || item.product_id}`}
+                                        className="cart-item-image"
+                                        aria-label={`View ${item.product_name}`}
+                                    >
+                                        {imageUrl ? (
+                                            <img
+                                                src={imageUrl}
+                                                alt={item.product_name}
+                                                onError={(event) => {
+                                                    event.currentTarget.style.display =
+                                                        "none";
+                                                }}
+                                            />
+                                        ) : (
+                                            <div className="cart-image-placeholder">
+                                                <span>HIMORA</span>
+                                            </div>
+                                        )}
+                                    </Link>
 
-                                <div className="cart-item-details">
-                                    <p className="cart-item-sku">
-                                        {item.sku}
-                                    </p>
+                                    <div className="cart-item-details">
+                                        <p className="cart-item-sku">
+                                            {item.sku}
+                                        </p>
 
-                                    <h2>{item.product_name}</h2>
+                                        <h2>{item.product_name}</h2>
 
-                                    <p>
-                                        Colour: {item.color || "Standard"}
-                                    </p>
+                                        <p>
+                                            Colour: {item.color || "Standard"}
+                                        </p>
 
-                                    <p>
-                                        Size: {item.size || "One Size"}
-                                    </p>
+                                        <p>
+                                            Size: {item.size || "One Size"}
+                                        </p>
 
-                                    <div className="cart-quantity">
+                                        <div className="cart-quantity">
+                                            <button
+                                                type="button"
+                                                aria-label="Decrease quantity"
+                                                disabled={
+                                                    updatingItem !== null ||
+                                                    item.quantity <= 1
+                                                }
+                                                onClick={() =>
+                                                    updateQuantity(
+                                                        item,
+                                                        item.quantity - 1
+                                                    )
+                                                }
+                                            >
+                                                <Minus size={14} />
+                                            </button>
+
+                                            <span>{item.quantity}</span>
+
+                                            <button
+                                                type="button"
+                                                aria-label="Increase quantity"
+                                                disabled={
+                                                    updatingItem !== null ||
+                                                    item.quantity >=
+                                                        item.available_quantity
+                                                }
+                                                onClick={() =>
+                                                    updateQuantity(
+                                                        item,
+                                                        item.quantity + 1
+                                                    )
+                                                }
+                                            >
+                                                <Plus size={14} />
+                                            </button>
+                                        </div>
+
                                         <button
                                             type="button"
-                                            aria-label="Decrease quantity"
-                                            disabled={
-                                                updatingItem !== null ||
-                                                item.quantity <= 1
-                                            }
-                                            onClick={() =>
-                                                updateQuantity(
-                                                    item,
-                                                    item.quantity - 1
-                                                )
-                                            }
+                                            className="cart-remove"
+                                            disabled={updatingItem !== null}
+                                            onClick={() => removeItem(item.id)}
                                         >
-                                            <Minus size={14} />
-                                        </button>
-
-                                        <span>{item.quantity}</span>
-
-                                        <button
-                                            type="button"
-                                            aria-label="Increase quantity"
-                                            disabled={
-                                                updatingItem !== null ||
-                                                item.quantity >=
-                                                    item.available_quantity
-                                            }
-                                            onClick={() =>
-                                                updateQuantity(
-                                                    item,
-                                                    item.quantity + 1
-                                                )
-                                            }
-                                        >
-                                            <Plus size={14} />
+                                            <Trash2 size={13} />
+                                            Remove
                                         </button>
                                     </div>
 
-                                    <button
-                                        type="button"
-                                        className="cart-remove"
-                                        disabled={updatingItem !== null}
-                                        onClick={() => removeItem(item.id)}
-                                    >
-                                        <Trash2 size={13} />
-                                        Remove
-                                    </button>
-                                </div>
-
-                                <div className="cart-item-price">
-                                    {formatPrice(
-                                        Number(item.unit_price) *
-                                            item.quantity
-                                    )}
-                                </div>
-                            </article>
-                        ))
+                                    <div className="cart-item-price">
+                                        {formatPrice(
+                                            Number(item.unit_price) *
+                                                item.quantity
+                                        )}
+                                    </div>
+                                </article>
+                            );
+                        })
                     )}
                 </div>
 
@@ -422,8 +441,7 @@ function Cart() {
                         type="button"
                         className="cart-checkout-button"
                         disabled={
-                            items.length === 0 ||
-                            updatingItem !== null
+                            items.length === 0 || updatingItem !== null
                         }
                         onClick={() => navigate("/checkout")}
                     >

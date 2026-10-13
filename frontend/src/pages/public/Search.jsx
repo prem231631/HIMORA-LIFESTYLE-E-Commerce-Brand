@@ -1,15 +1,10 @@
-
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Search as SearchIcon, ArrowUpRight } from "lucide-react";
 import { Link } from "react-router-dom";
-
 import "./Search.css";
 
 const API_BASE_URL =
     import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
-
-const FALLBACK_IMAGE =
-    "https://images.unsplash.com/photo-1511499767150-a48a237f0083?auto=format&fit=crop&w=900&q=85";
 
 const SUGGESTIONS = ["Eyewear", "Horizon", "Altitude"];
 
@@ -20,9 +15,19 @@ function formatPrice(price) {
         return "Price unavailable";
     }
 
-    return `NPR ${amount.toLocaleString("en-IN", {
+    return `NPR ${amount.toLocaleString("en-NP", {
         maximumFractionDigits: 2,
     })}`;
+}
+
+function getImageUrl(imageUrl) {
+    if (!imageUrl) return null;
+
+    if (/^https?:\/\//i.test(imageUrl)) {
+        return imageUrl;
+    }
+
+    return `${API_BASE_URL.replace(/\/$/, "")}/${imageUrl.replace(/^\//, "")}`;
 }
 
 function Search() {
@@ -45,9 +50,7 @@ function Search() {
             });
 
             if (!response.ok) {
-                throw new Error(
-                    "Unable to load products. Please try again."
-                );
+                throw new Error("Unable to load products. Please try again.");
             }
 
             const data = await response.json();
@@ -58,14 +61,10 @@ function Search() {
 
             setProducts(data.filter((product) => product.is_active !== false));
         } catch (err) {
-            if (err.name === "AbortError") {
-                return;
-            }
+            if (err.name === "AbortError") return;
 
             console.error("Unable to fetch HIMORA products:", err);
-            setError(
-                err.message || "Unable to load products. Please try again."
-            );
+            setError(err.message || "Unable to load products. Please try again.");
         } finally {
             if (!signal.aborted) {
                 setLoading(false);
@@ -84,9 +83,7 @@ function Search() {
     const filteredProducts = useMemo(() => {
         const searchTerm = query.trim().toLowerCase();
 
-        if (!searchTerm) {
-            return [];
-        }
+        if (!searchTerm) return [];
 
         return products.filter((product) => {
             const searchableText = [
@@ -111,9 +108,7 @@ function Search() {
     return (
         <main className="search-page">
             <section className="search-page-header">
-                <p className="search-page-eyebrow">
-                    HIMORA / DISCOVER
-                </p>
+                <p className="search-page-eyebrow">HIMORA / DISCOVER</p>
 
                 <h1>
                     Find your
@@ -157,8 +152,8 @@ function Search() {
                         {loading
                             ? "LOADING PRODUCTS"
                             : query.trim()
-                                ? `${filteredProducts.length} RESULTS`
-                                : "SUGGESTED SEARCHES"}
+                              ? `${filteredProducts.length} RESULTS`
+                              : "SUGGESTED SEARCHES"}
                     </span>
                 </div>
 
@@ -199,12 +194,10 @@ function Search() {
                     <div className="search-results-grid">
                         {filteredProducts.map((product) => {
                             const primaryImage =
-                                product.images?.find(
-                                    (image) => image.is_primary
-                                ) || product.images?.[0];
+                                product.images?.find((image) => image.is_primary) ||
+                                product.images?.[0];
 
-                            const imageUrl =
-                                primaryImage?.image_url || FALLBACK_IMAGE;
+                            const imageUrl = getImageUrl(primaryImage?.image_url);
 
                             return (
                                 <Link
@@ -213,23 +206,24 @@ function Search() {
                                     key={product.id}
                                 >
                                     <div className="search-product-image">
-                                        <img
-                                            src={imageUrl}
-                                            alt={
-                                                primaryImage?.alt_text ||
-                                                product.name
-                                            }
-                                            loading="lazy"
-                                            onError={(event) => {
-                                                if (
-                                                    event.currentTarget.src !==
-                                                    FALLBACK_IMAGE
-                                                ) {
-                                                    event.currentTarget.src =
-                                                        FALLBACK_IMAGE;
+                                        {imageUrl ? (
+                                            <img
+                                                src={imageUrl}
+                                                alt={
+                                                    primaryImage?.alt_text ||
+                                                    product.name
                                                 }
-                                            }}
-                                        />
+                                                loading="lazy"
+                                                onError={(event) => {
+                                                    event.currentTarget.style.display =
+                                                        "none";
+                                                }}
+                                            />
+                                        ) : (
+                                            <div className="search-image-placeholder">
+                                                <span>HIMORA</span>
+                                            </div>
+                                        )}
                                     </div>
 
                                     <div className="search-product-info">

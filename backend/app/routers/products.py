@@ -1,10 +1,14 @@
+
+from decimal import Decimal
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.security import require_admin
 from app.database.session import get_db
-from app.models import Category, Product, User, Inventory, ProductVariant
+from app.models import Category, Product, User
 from app.schemas import ProductCreate, ProductResponse, ProductUpdate
 
 
@@ -15,13 +19,32 @@ router = APIRouter(
 
 
 def product_query():
-    return (
-        select(Product)
-        .options(
-            selectinload(Product.category),
-            selectinload(Product.images),
-        )
+    return select(Product).options(
+        selectinload(Product.category),
+        selectinload(Product.images),
     )
+
+
+def normalize_name(value: str) -> str:
+    return " ".join(value.strip().split())
+
+
+def normalize_slug(value: str) -> str:
+    return "-".join(value.strip().lower().split())
+
+
+def get_product_or_404(db: Session, product_id: int) -> Product:
+    product = db.scalar(
+        product_query().where(Product.id == product_id)
+    )
+
+    if product is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Product not found.",
+        )
+
+    return product
 
 
 @router.post(
@@ -34,19 +57,33 @@ def create_product(
     db: Session = Depends(get_db),
     admin: User = Depends(require_admin),
 ):
-    if product_data.category_id is not None:
-        category = db.get(Category, product_data.category_id)
+    category_id = product_data.category_id
 
-        if not category:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Category not found.",
-            )
+    if category_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="A category is required for every product.",
+        )
+
+    category = db.get(Category, category_id)
+
+    if category is None or not category.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Active category not found.",
+        )
+
+    name = normalize_name(product_data.name)
+    slug = normalize_slug(product_data.slug)
+
+    if not name or not slug:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Product name and slug cannot be empty.",
+        )
 
     existing_product = db.scalar(
-        select(Product).where(
-            Product.slug == product_data.slug
-        )
+        select(Product).where(Product.slug == slug)
     )
 
     if existing_product:
@@ -56,10 +93,14 @@ def create_product(
         )
 
     product = Product(
-        category_id=product_data.category_id,
-        name=product_data.name,
-        slug=product_data.slug,
-        description=product_data.description,
+        category_id=category_id,
+        name=name,
+        slug=slug,
+        description=(
+            product_data.description.strip()
+            if product_data.description
+            else None
+        ),
         price=product_data.price,
         is_active=product_data.is_active,
         is_featured=product_data.is_featured,
@@ -67,13 +108,18 @@ def create_product(
         is_limited=product_data.is_limited,
     )
 
-    db.add(product)
-    db.commit()
-    db.refresh(product)
+    try:
+        db.add(product)
+        db.commit()
+        db.refresh(product)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="The product could not be created because of a conflicting value.",
+        )
 
-    return db.scalar(
-        product_query().where(Product.id == product.id)
-    )
+    return get_product_or_404(db, product.id)
 
 
 @router.get(
@@ -85,6 +131,7 @@ def get_products(
 ):
     statement = (
         product_query()
+        .where(Product.is_active.is_(True))
         .order_by(Product.created_at.desc())
     )
 
@@ -120,11 +167,12 @@ def get_product(
 ):
     product = db.scalar(
         product_query().where(
-            Product.slug == product_slug
+            Product.slug == product_slug,
+            Product.is_active.is_(True),
         )
     )
 
-    if not product:
+    if product is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Product not found.",
@@ -145,29 +193,32 @@ def update_product(
 ):
     product = db.get(Product, product_id)
 
-    if not product:
+    if product is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Product not found.",
         )
 
-    update_data = product_data.model_dump(
-        exclude_unset=True
-    )
+    update_data = product_data.model_dump(exclude_unset=True)
 
-    if "category_id" in update_data:
-        category_id = update_data["category_id"]
+    if "name" in update_data and update_data["name"] is not None:
+        update_data["name"] = normalize_name(update_data["name"])
 
-        if category_id is not None:
-            category = db.get(Category, category_id)
+        if not update_data["name"]:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Product name cannot be empty.",
+            )
 
-            if not category:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Category not found.",
-                )
+    if "slug" in update_data and update_data["slug"] is not None:
+        update_data["slug"] = normalize_slug(update_data["slug"])
 
-    if "slug" in update_data:
+        if not update_data["slug"]:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Product slug cannot be empty.",
+            )
+
         existing_product = db.scalar(
             select(Product).where(
                 Product.slug == update_data["slug"],
@@ -181,16 +232,40 @@ def update_product(
                 detail="A product with this slug already exists.",
             )
 
+    if "description" in update_data and update_data["description"] is not None:
+        update_data["description"] = update_data["description"].strip() or None
+
+    if "category_id" in update_data:
+        category_id = update_data["category_id"]
+
+        if category_id is None:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="A product must belong to a category.",
+            )
+
+        category = db.get(Category, category_id)
+
+        if category is None or not category.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Active category not found.",
+            )
+
     for field, value in update_data.items():
         setattr(product, field, value)
 
-    db.commit()
-
-    return db.scalar(
-        product_query().where(
-            Product.id == product_id
+    try:
+        db.commit()
+        db.refresh(product)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="The product could not be updated because of a conflicting value.",
         )
-    )
+
+    return get_product_or_404(db, product_id)
 
 
 @router.delete(
@@ -202,20 +277,18 @@ def deactivate_product(
     db: Session = Depends(get_db),
     admin: User = Depends(require_admin),
 ):
-    product = db.get(Product, product_id)
-
-    if not product:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Product not found.",
-        )
+    product = get_product_or_404(db, product_id)
 
     product.is_active = False
 
-    db.commit()
-
-    return db.scalar(
-        product_query().where(
-            Product.id == product_id
+    try:
+        db.commit()
+        db.refresh(product)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="The product could not be deactivated.",
         )
-    )
+
+    return get_product_or_404(db, product_id)

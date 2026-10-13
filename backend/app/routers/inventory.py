@@ -2,9 +2,14 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.security import require_admin
 from app.database.session import get_db
-from app.models import Inventory, ProductVariant
-from app.schemas import InventoryAdjustRequest, InventoryReservationRequest, InventoryResponse
+from app.models import Inventory, ProductVariant, User
+from app.schemas import (
+    InventoryAdjustRequest,
+    InventoryReservationRequest,
+    InventoryResponse,
+)
 
 
 router = APIRouter(
@@ -84,11 +89,9 @@ def increase_inventory(
     variant_id: int,
     adjustment: InventoryAdjustRequest,
     db: Session = Depends(get_db),
+    admin: User = Depends(require_admin),
 ):
-    variant = get_variant_or_404(
-        variant_id,
-        db,
-    )
+    variant = get_variant_or_404(variant_id, db)
 
     if not variant.is_active:
         raise HTTPException(
@@ -96,10 +99,7 @@ def increase_inventory(
             detail="Cannot modify inventory for an inactive variant.",
         )
 
-    inventory = get_inventory_or_404(
-        variant_id,
-        db,
-    )
+    inventory = get_inventory_or_404(variant_id, db)
 
     inventory.stock_quantity += adjustment.quantity
 
@@ -117,11 +117,9 @@ def decrease_inventory(
     variant_id: int,
     adjustment: InventoryAdjustRequest,
     db: Session = Depends(get_db),
+    admin: User = Depends(require_admin),
 ):
-    variant = get_variant_or_404(
-        variant_id,
-        db,
-    )
+    variant = get_variant_or_404(variant_id, db)
 
     if not variant.is_active:
         raise HTTPException(
@@ -129,19 +127,14 @@ def decrease_inventory(
             detail="Cannot modify inventory for an inactive variant.",
         )
 
-    inventory = get_inventory_or_404(
-        variant_id,
-        db,
-    )
+    inventory = get_inventory_or_404(variant_id, db)
 
-    available_quantity = inventory.available_quantity
-
-    if adjustment.quantity > available_quantity:
+    if adjustment.quantity > inventory.available_quantity:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=(
                 f"Cannot decrease stock by {adjustment.quantity}. "
-                f"Only {available_quantity} units are available."
+                f"Only {inventory.available_quantity} units are available."
             ),
         )
 
@@ -161,6 +154,7 @@ def reserve_inventory(
     variant_id: int,
     reservation: InventoryReservationRequest,
     db: Session = Depends(get_db),
+    admin: User = Depends(require_admin),
 ):
     get_variant_or_404(variant_id, db)
 
@@ -201,6 +195,7 @@ def release_inventory(
     variant_id: int,
     reservation: InventoryReservationRequest,
     db: Session = Depends(get_db),
+    admin: User = Depends(require_admin),
 ):
     get_variant_or_404(variant_id, db)
 

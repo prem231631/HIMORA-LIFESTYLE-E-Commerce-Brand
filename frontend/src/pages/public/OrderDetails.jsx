@@ -1,4 +1,3 @@
-
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
@@ -11,6 +10,7 @@ import {
     CheckCircle2,
     Clock3,
     XCircle,
+    Image as ImageIcon,
 } from "lucide-react";
 
 import "./OrderDetails.css";
@@ -21,8 +21,30 @@ const API_BASE_URL =
 function getAuthToken() {
     return (
         localStorage.getItem("access_token") ||
-        localStorage.getItem("token")
+        localStorage.getItem("token") ||
+        ""
     );
+}
+
+function getImageUrl(imageUrl) {
+    if (!imageUrl || typeof imageUrl !== "string") {
+        return null;
+    }
+
+    const trimmedUrl = imageUrl.trim();
+
+    if (!trimmedUrl) {
+        return null;
+    }
+
+    if (/^https?:\/\//i.test(trimmedUrl)) {
+        return trimmedUrl;
+    }
+
+    return `${API_BASE_URL.replace(/\/+$/, "")}/${trimmedUrl.replace(
+        /^\/+/,
+        ""
+    )}`;
 }
 
 function formatCurrency(amount) {
@@ -112,6 +134,11 @@ function OrderDetails() {
             if (response.status === 401) {
                 localStorage.removeItem("access_token");
                 localStorage.removeItem("token");
+                localStorage.removeItem("user");
+
+                window.dispatchEvent(
+                    new Event("himora-auth-updated")
+                );
 
                 navigate("/login", {
                     state: { from: `/account/orders/${orderId}` },
@@ -190,6 +217,11 @@ function OrderDetails() {
             if (response.status === 401) {
                 localStorage.removeItem("access_token");
                 localStorage.removeItem("token");
+                localStorage.removeItem("user");
+
+                window.dispatchEvent(
+                    new Event("himora-auth-updated")
+                );
 
                 navigate("/login", {
                     state: { from: `/account/orders/${orderId}` },
@@ -210,13 +242,15 @@ function OrderDetails() {
                 throw new Error(detail);
             }
 
-            setCancelMessage("Your order has been cancelled successfully.");
+            setCancelMessage(
+                "Your order has been cancelled successfully."
+            );
 
-            // Refresh the order to show the latest status and history.
             await loadOrder();
         } catch (err) {
             setCancelError(
-                err.message || "Something went wrong while cancelling."
+                err.message ||
+                    "Something went wrong while cancelling."
             );
         } finally {
             setCancelling(false);
@@ -268,7 +302,10 @@ function OrderDetails() {
                         <AlertCircle size={27} />
                         <h1>Order unavailable</h1>
                         <p>{error}</p>
-                        <button type="button" onClick={loadOrder}>
+                        <button
+                            type="button"
+                            onClick={loadOrder}
+                        >
                             Try again
                         </button>
                     </section>
@@ -289,11 +326,14 @@ function OrderDetails() {
                             <div className="order-confirmation-icon">
                                 {statusIcon(order.status)}
                             </div>
+
                             <div>
                                 <p className="order-confirmation-label">
                                     ORDER STATUS
                                 </p>
-                                <h2>{readableStatus(order.status)}</h2>
+                                <h2>
+                                    {readableStatus(order.status)}
+                                </h2>
                                 <p>
                                     Order placed{" "}
                                     {formatDate(order.created_at)}
@@ -322,6 +362,7 @@ function OrderDetails() {
                                 </span>
                             </div>
 
+                            {/* ORDERED PRODUCTS */}
                             <div className="order-details-section">
                                 <h3>
                                     <Package size={18} />
@@ -331,59 +372,130 @@ function OrderDetails() {
                                 {Array.isArray(order.items) &&
                                 order.items.length > 0 ? (
                                     <div className="order-details-items">
-                                        {order.items.map((item, index) => (
-                                            <article
-                                                className="order-details-item"
-                                                key={item.id ?? index}
-                                            >
-                                                <div className="order-item-placeholder">
-                                                    <Package size={22} />
-                                                </div>
+                                        {order.items.map((item, index) => {
+                                            const rawImageUrl =
+                                                item.image_url ||
+                                                item.product_image_url ||
+                                                item.primary_image?.image_url ||
+                                                item.product?.primary_image
+                                                    ?.image_url ||
+                                                item.product?.image_url ||
+                                                null;
 
-                                                <div className="order-item-information">
-                                                    <h4>
-                                                        {item.product_name ||
-                                                            item.name ||
-                                                            "HIMORA Product"}
-                                                    </h4>
+                                            const imageUrl =
+                                                getImageUrl(rawImageUrl);
 
-                                                    {item.sku && (
-                                                        <p>SKU: {item.sku}</p>
-                                                    )}
+                                            return (
+                                                <article
+                                                    className="order-details-item"
+                                                    key={item.id ?? index}
+                                                >
+                                                    <div className="order-item-placeholder">
+                                                        {imageUrl ? (
+                                                            <img
+                                                                src={imageUrl}
+                                                                alt={
+                                                                    item.product_name ||
+                                                                    item.name ||
+                                                                    item.product?.name ||
+                                                                    "HIMORA product"
+                                                                }
+                                                                className="order-product-image"
+                                                                loading="lazy"
+                                                                onError={(
+                                                                    event
+                                                                ) => {
+                                                                    event.currentTarget.style.display =
+                                                                        "none";
 
-                                                    {(item.size ||
-                                                        item.color) && (
+                                                                    const placeholder =
+                                                                        event.currentTarget.parentElement?.querySelector(
+                                                                            ".order-image-fallback"
+                                                                        );
+
+                                                                    if (
+                                                                        placeholder
+                                                                    ) {
+                                                                        placeholder.style.display =
+                                                                            "flex";
+                                                                    }
+                                                                }}
+                                                            />
+                                                        ) : null}
+
+                                                        <div
+                                                            className="order-image-fallback"
+                                                            style={{
+                                                                display:
+                                                                    imageUrl
+                                                                        ? "none"
+                                                                        : "flex",
+                                                            }}
+                                                        >
+                                                            <ImageIcon
+                                                                size={23}
+                                                                strokeWidth={
+                                                                    1.3
+                                                                }
+                                                            />
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="order-item-information">
+                                                        <h4>
+                                                            {item.product_name ||
+                                                                item.name ||
+                                                                item.product
+                                                                    ?.name ||
+                                                                "HIMORA Product"}
+                                                        </h4>
+
+                                                        {item.sku && (
+                                                            <p>
+                                                                SKU:{" "}
+                                                                {item.sku}
+                                                            </p>
+                                                        )}
+
+                                                        {(item.size ||
+                                                            item.color) && (
+                                                            <p>
+                                                                {[
+                                                                    item.size,
+                                                                    item.color,
+                                                                ]
+                                                                    .filter(
+                                                                        Boolean
+                                                                    )
+                                                                    .join(
+                                                                        " · "
+                                                                    )}
+                                                            </p>
+                                                        )}
+
                                                         <p>
-                                                            {[
-                                                                item.size,
-                                                                item.color,
-                                                            ]
-                                                                .filter(Boolean)
-                                                                .join(" · ")}
+                                                            Quantity:{" "}
+                                                            {item.quantity ??
+                                                                1}
                                                         </p>
-                                                    )}
+                                                    </div>
 
-                                                    <p>
-                                                        Quantity:{" "}
-                                                        {item.quantity ?? 1}
-                                                    </p>
-                                                </div>
-
-                                                <strong className="order-item-price">
-                                                    {formatCurrency(
-                                                        item.subtotal ??
-                                                            Number(
-                                                                item.unit_price ??
-                                                                    0
-                                                            ) *
+                                                    <strong className="order-item-price">
+                                                        {formatCurrency(
+                                                            item.subtotal ??
                                                                 Number(
-                                                                    item.quantity ??
-                                                                        1
-                                                                )
-                                                    )}
-                                                </strong>
-                                            </article>
-                                        ))}
+                                                                    item.unit_price ??
+                                                                        0
+                                                                ) *
+                                                                    Number(
+                                                                        item.quantity ??
+                                                                            1
+                                                                    )
+                                                        )}
+                                                    </strong>
+                                                </article>
+                                            );
+                                        })}
                                     </div>
                                 ) : (
                                     <p className="order-details-muted">
@@ -392,6 +504,7 @@ function OrderDetails() {
                                 )}
                             </div>
 
+                            {/* PAYMENT SUMMARY */}
                             <div className="order-details-section">
                                 <h3>
                                     <CreditCard size={18} />
@@ -400,7 +513,9 @@ function OrderDetails() {
 
                                 <div className="order-price-row">
                                     <span>Subtotal</span>
-                                    <span>{formatCurrency(subtotal)}</span>
+                                    <span>
+                                        {formatCurrency(subtotal)}
+                                    </span>
                                 </div>
 
                                 <div className="order-price-row">
@@ -414,7 +529,9 @@ function OrderDetails() {
 
                                 <div className="order-price-row order-grand-total">
                                     <strong>Total</strong>
-                                    <strong>{formatCurrency(total)}</strong>
+                                    <strong>
+                                        {formatCurrency(total)}
+                                    </strong>
                                 </div>
 
                                 <div className="order-payment-information">
@@ -427,6 +544,7 @@ function OrderDetails() {
                                             )}
                                         </strong>
                                     </div>
+
                                     <div>
                                         <span>Payment status</span>
                                         <strong>
@@ -441,6 +559,7 @@ function OrderDetails() {
                                 </div>
                             </div>
 
+                            {/* DELIVERY ADDRESS */}
                             {shippingAddress &&
                                 (shippingAddress.full_name ||
                                     shippingAddress.address_line) && (
@@ -456,9 +575,13 @@ function OrderDetails() {
                                                     {shippingAddress.full_name}
                                                 </strong>
                                             )}
+
                                             {shippingAddress.phone && (
-                                                <p>{shippingAddress.phone}</p>
+                                                <p>
+                                                    {shippingAddress.phone}
+                                                </p>
                                             )}
+
                                             <p>
                                                 {[
                                                     shippingAddress.address_line,
@@ -474,6 +597,7 @@ function OrderDetails() {
                                     </div>
                                 )}
 
+                            {/* ORDER STATUS HISTORY */}
                             {Array.isArray(order.status_history) &&
                                 order.status_history.length > 0 && (
                                     <div className="order-details-section">
@@ -487,15 +611,19 @@ function OrderDetails() {
                                                 (entry, index) => (
                                                     <div
                                                         className="order-timeline-entry"
-                                                        key={entry.id ?? index}
+                                                        key={
+                                                            entry.id ?? index
+                                                        }
                                                     >
                                                         <span className="order-timeline-dot" />
+
                                                         <div>
                                                             <strong>
                                                                 {readableStatus(
                                                                     entry.status
                                                                 )}
                                                             </strong>
+
                                                             {entry.created_at && (
                                                                 <p>
                                                                     {formatDate(
@@ -503,6 +631,7 @@ function OrderDetails() {
                                                                     )}
                                                                 </p>
                                                             )}
+
                                                             {entry.note && (
                                                                 <p>
                                                                     {entry.note}
@@ -529,7 +658,9 @@ function OrderDetails() {
                             <button
                                 type="button"
                                 className="order-details-secondary-button"
-                                onClick={() => navigate("/account/orders")}
+                                onClick={() =>
+                                    navigate("/account/orders")
+                                }
                             >
                                 View all orders
                             </button>

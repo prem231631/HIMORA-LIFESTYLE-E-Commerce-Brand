@@ -19,6 +19,7 @@ import Addresses from "./pages/public/Addresses";
 import Orders from "./pages/public/Orders";
 import OrderDetails from "./pages/public/OrderDetails";
 import Account from "./pages/public/Account";
+import AdminProducts from "./pages/admin/AdminProducts";
 
 import AdminOrders from "./pages/admin/AdminOrders";
 import AdminOrderDetails from "./pages/admin/AdminOrderDetail";
@@ -128,6 +129,7 @@ function App() {
                     }
                 />
 
+
                 {/* COLLECTIONS */}
                 <Route
                     path="/collections"
@@ -214,6 +216,11 @@ function App() {
                 <Route
                     path="/admin/orders/:orderId"
                     element={<AdminOrderDetails />}
+                />
+
+                <Route
+                    path="/admin/products"
+                    element={<AdminProducts />}
                 />
             </Routes>
         </BrowserRouter>

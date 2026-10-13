@@ -2,8 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
+from app.core.security import require_admin
 from app.database.session import get_db
-from app.models import Category, Product
+from app.models import Category, Product, User
 from app.schemas import ProductCreate, ProductResponse, ProductUpdate
 
 
@@ -31,6 +32,7 @@ def product_query():
 def create_product(
     product_data: ProductCreate,
     db: Session = Depends(get_db),
+    admin: User = Depends(require_admin),
 ):
     if product_data.category_id is not None:
         category = db.get(Category, product_data.category_id)
@@ -108,21 +110,23 @@ def get_featured_products(
     return db.scalars(statement).all()
 
 
-@router.get("/{product_slug}", response_model=ProductResponse)
-def get_product(product_slug: str, db: Session = Depends(get_db)):
-    product = (
-        db.query(Product)
-        .options(
-            selectinload(Product.category),
-            selectinload(Product.images),
+@router.get(
+    "/{product_slug}",
+    response_model=ProductResponse,
+)
+def get_product(
+    product_slug: str,
+    db: Session = Depends(get_db),
+):
+    product = db.scalar(
+        product_query().where(
+            Product.slug == product_slug
         )
-        .filter(Product.slug == product_slug)
-        .first()
     )
 
     if not product:
         raise HTTPException(
-            status_code=404,
+            status_code=status.HTTP_404_NOT_FOUND,
             detail="Product not found.",
         )
 
@@ -137,6 +141,7 @@ def update_product(
     product_id: int,
     product_data: ProductUpdate,
     db: Session = Depends(get_db),
+    admin: User = Depends(require_admin),
 ):
     product = db.get(Product, product_id)
 
@@ -182,7 +187,9 @@ def update_product(
     db.commit()
 
     return db.scalar(
-        product_query().where(Product.id == product_id)
+        product_query().where(
+            Product.id == product_id
+        )
     )
 
 
@@ -193,6 +200,7 @@ def update_product(
 def deactivate_product(
     product_id: int,
     db: Session = Depends(get_db),
+    admin: User = Depends(require_admin),
 ):
     product = db.get(Product, product_id)
 
@@ -207,5 +215,7 @@ def deactivate_product(
     db.commit()
 
     return db.scalar(
-        product_query().where(Product.id == product_id)
+        product_query().where(
+            Product.id == product_id
+        )
     )

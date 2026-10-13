@@ -1,3 +1,4 @@
+
 import { useEffect, useMemo, useState } from "react";
 import {
   Plus,
@@ -5,6 +6,8 @@ import {
   Search,
   X,
   Save,
+  ImagePlus,
+  Package,
 } from "lucide-react";
 import "./AdminProducts.css";
 
@@ -17,16 +20,40 @@ const INITIAL_FORM_DATA = {
   category_id: "",
   description: "",
   price: "",
+  stock_quantity: "0",
   is_active: true,
   is_featured: false,
   is_new: false,
   is_limited: false,
 };
 
+function getToken() {
+  return localStorage.getItem("access_token");
+}
+
+async function readResponse(response) {
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    const detail = Array.isArray(data.detail)
+      ? data.detail.map((item) => item.msg).join(", ")
+      : data.detail;
+
+    throw new Error(detail || "The request failed.");
+  }
+
+  return data;
+}
+
+function imageUrl(url) {
+  if (!url) return "";
+  if (/^https?:\/\//i.test(url)) return url;
+  return `${API_BASE_URL}${url.startsWith("/") ? "" : "/"}${url}`;
+}
+
 function AdminProducts() {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
-
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("ALL");
   const [statusFilter, setStatusFilter] = useState("ALL");
@@ -38,54 +65,69 @@ function AdminProducts() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
-
   const [formData, setFormData] = useState(INITIAL_FORM_DATA);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState("");
 
   const fetchProducts = async () => {
     setLoading(true);
     setError("");
 
     try {
-      const token = localStorage.getItem("access_token");
+      const token = getToken();
 
       if (!token) {
-        throw new Error(
-          "Admin authentication token not found. Please log in."
-        );
+        throw new Error("Please log in with your admin account.");
       }
+
+      const headers = { Authorization: `Bearer ${token}` };
 
       const [productsResponse, categoriesResponse] = await Promise.all([
-        fetch(`${API_BASE_URL}/api/products`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }),
-        fetch(`${API_BASE_URL}/api/categories`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }),
+        fetch(`${API_BASE_URL}/api/products`, { headers }),
+        fetch(`${API_BASE_URL}/api/categories`, { headers }),
       ]);
 
-      const productsData = await productsResponse.json();
-      const categoriesData = await categoriesResponse.json();
+      const [productsData, categoriesData] = await Promise.all([
+        readResponse(productsResponse),
+        readResponse(categoriesResponse),
+      ]);
 
-      if (!productsResponse.ok) {
-        throw new Error(
-          productsData.detail || "Failed to load products."
-        );
-      }
+      // Fetch variant inventory for each product using the existing API.
+      const productsWithStock = await Promise.all(
+        (Array.isArray(productsData) ? productsData : []).map(
+          async (product) => {
+            try {
+              const response = await fetch(
+                `${API_BASE_URL}/api/products/${product.id}/variants`,
+                { headers }
+              );
 
-      if (!categoriesResponse.ok) {
-        throw new Error(
-          categoriesData.detail || "Failed to load categories."
-        );
-      }
+              if (!response.ok) {
+                return { ...product, stock_quantity: null };
+              }
 
-      setProducts(Array.isArray(productsData) ? productsData : []);
+              const variants = await response.json();
+
+              const totalStock = Array.isArray(variants)
+                ? variants.reduce(
+                    (sum, variant) =>
+                      sum + Number(variant.inventory?.stock_quantity || 0),
+                    0
+                  )
+                : 0;
+
+              return { ...product, stock_quantity: totalStock };
+            } catch {
+              return { ...product, stock_quantity: null };
+            }
+          }
+        )
+      );
+
+      setProducts(productsWithStock);
       setCategories(Array.isArray(categoriesData) ? categoriesData : []);
     } catch (err) {
-      setError(err.message || "Something went wrong.");
+      setError(err.message || "Failed to load products.");
     } finally {
       setLoading(false);
     }
@@ -95,21 +137,28 @@ function AdminProducts() {
     fetchProducts();
   }, []);
 
+  useEffect(() => {
+    return () => {
+      if (imagePreview.startsWith("blob:")) {
+        URL.revokeObjectURL(imagePreview);
+      }
+    };
+  }, [imagePreview]);
+
   const filteredProducts = useMemo(() => {
-    const searchValue = search.trim().toLowerCase();
+    const query = search.trim().toLowerCase();
 
     return products.filter((product) => {
       const matchesSearch =
-        !searchValue ||
-        product.name?.toLowerCase().includes(searchValue) ||
-        product.slug?.toLowerCase().includes(searchValue);
+        !query ||
+        product.name?.toLowerCase().includes(query) ||
+        product.slug?.toLowerCase().includes(query);
 
-      const productCategoryId =
-        product.category?.id ?? product.category_id;
+      const categoryId = product.category?.id ?? product.category_id;
 
       const matchesCategory =
         categoryFilter === "ALL" ||
-        String(productCategoryId) === categoryFilter;
+        String(categoryId) === categoryFilter;
 
       const matchesStatus =
         statusFilter === "ALL" ||
@@ -127,18 +176,13 @@ function AdminProducts() {
     })}`;
 
   const handleProductNameChange = (value) => {
-    const generatedSlug = value
+    const slug = value
       .toLowerCase()
       .trim()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "");
 
-    setFormData((previous) => ({
-      ...previous,
-      name: value,
-      slug: generatedSlug,
-    }));
-
+    setFormData((previous) => ({ ...previous, name: value, slug }));
     setFormError("");
   };
 
@@ -153,8 +197,37 @@ function AdminProducts() {
     setFormError("");
   };
 
+  const handleImageChange = (event) => {
+    const file = event.target.files?.[0];
+
+    setSelectedImage(null);
+    setImagePreview("");
+
+    if (!file) return;
+
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+
+    if (!allowedTypes.includes(file.type)) {
+      setFormError("Choose a JPEG, PNG, or WebP image.");
+      event.target.value = "";
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setFormError("Image size must not exceed 5 MB.");
+      event.target.value = "";
+      return;
+    }
+
+    setSelectedImage(file);
+    setImagePreview(URL.createObjectURL(file));
+    setFormError("");
+  };
+
   const openCreateForm = () => {
     setFormData(INITIAL_FORM_DATA);
+    setSelectedImage(null);
+    setImagePreview("");
     setFormError("");
     setError("");
     setSuccess("");
@@ -163,30 +236,29 @@ function AdminProducts() {
 
   const closeCreateForm = () => {
     if (saving) return;
-
     setShowCreateForm(false);
     setFormError("");
+    setSelectedImage(null);
+    setImagePreview("");
   };
 
   const handleCreateProduct = async (event) => {
     event.preventDefault();
-
     setFormError("");
     setError("");
     setSuccess("");
 
-    const token = localStorage.getItem("access_token");
+    const token = getToken();
 
     if (!token) {
-      setFormError(
-        "Admin authentication token not found. Please log in again."
-      );
+      setFormError("Please log in with your admin account.");
       return;
     }
 
     const name = formData.name.trim();
     const slug = formData.slug.trim();
     const price = Number(formData.price);
+    const stock = Number(formData.stock_quantity);
 
     if (name.length < 2) {
       setFormError("Product name must contain at least 2 characters.");
@@ -194,9 +266,7 @@ function AdminProducts() {
     }
 
     if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
-      setFormError(
-        "Use a valid slug containing lowercase letters, numbers, and single hyphens."
-      );
+      setFormError("Enter a valid lowercase product slug.");
       return;
     }
 
@@ -207,6 +277,11 @@ function AdminProducts() {
 
     if (!Number.isFinite(price) || price <= 0) {
       setFormError("Enter a valid price greater than zero.");
+      return;
+    }
+
+    if (!Number.isSafeInteger(stock) || stock < 0) {
+      setFormError("Stock quantity must be a non-negative whole number.");
       return;
     }
 
@@ -225,6 +300,7 @@ function AdminProducts() {
           category_id: Number(formData.category_id),
           description: formData.description.trim() || null,
           price,
+          stock_quantity: stock,
           is_active: formData.is_active,
           is_featured: formData.is_featured,
           is_new: formData.is_new,
@@ -232,19 +308,39 @@ function AdminProducts() {
         }),
       });
 
-      const data = await response.json();
+      const product = await readResponse(response);
 
-      if (!response.ok) {
-        const detail = Array.isArray(data.detail)
-          ? data.detail.map((item) => item.msg).join(", ")
-          : data.detail;
+      if (selectedImage) {
+        const uploadForm = new FormData();
+        uploadForm.append("file", selectedImage);
+        uploadForm.append("alt_text", name);
 
-        throw new Error(detail || "Failed to create product.");
+        const uploadResponse = await fetch(
+          `${API_BASE_URL}/api/products/${product.id}/images/upload`,
+          {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}` },
+            body: uploadForm,
+          }
+        );
+
+        try {
+          await readResponse(uploadResponse);
+        } catch (uploadError) {
+          setSuccess(
+            `Product created, but image upload failed: ${uploadError.message}. You can retry the image upload separately.`
+          );
+          setShowCreateForm(false);
+          await fetchProducts();
+          return;
+        }
       }
 
-      setSuccess(`"${data.name}" was created successfully.`);
+      setSuccess(`"${product.name}" was created successfully.`);
       setShowCreateForm(false);
       setFormData(INITIAL_FORM_DATA);
+      setSelectedImage(null);
+      setImagePreview("");
 
       await fetchProducts();
     } catch (err) {
@@ -258,12 +354,8 @@ function AdminProducts() {
     <main className="admin-products-page">
       <header className="admin-products-header">
         <div>
-          <p className="admin-products-eyebrow">
-            HIMORA ADMINISTRATION
-          </p>
-
+          <p className="admin-products-eyebrow">HIMORA ADMINISTRATION</p>
           <h1>Products</h1>
-
           <p className="admin-products-description">
             Curate the collection, manage product details, and control
             which pieces are available to customers.
@@ -277,8 +369,7 @@ function AdminProducts() {
             onClick={fetchProducts}
             disabled={loading || saving}
           >
-            <RefreshCw size={15} />
-            Refresh
+            <RefreshCw size={15} /> Refresh
           </button>
 
           <button
@@ -287,8 +378,7 @@ function AdminProducts() {
             onClick={openCreateForm}
             disabled={saving}
           >
-            <Plus size={16} />
-            Add Product
+            <Plus size={16} /> Add Product
           </button>
         </div>
       </header>
@@ -296,7 +386,6 @@ function AdminProducts() {
       <section className="admin-products-toolbar">
         <label className="admin-products-search">
           <Search size={17} />
-
           <input
             type="search"
             placeholder="Search products by name or slug..."
@@ -307,12 +396,11 @@ function AdminProducts() {
 
         <select
           aria-label="Filter by category"
+          className="admin-products-filter"
           value={categoryFilter}
           onChange={(event) => setCategoryFilter(event.target.value)}
-          className="admin-products-filter"
         >
           <option value="ALL">All categories</option>
-
           {categories.map((category) => (
             <option key={category.id} value={String(category.id)}>
               {category.name}
@@ -322,9 +410,9 @@ function AdminProducts() {
 
         <select
           aria-label="Filter by publication status"
+          className="admin-products-filter"
           value={statusFilter}
           onChange={(event) => setStatusFilter(event.target.value)}
-          className="admin-products-filter"
         >
           <option value="ALL">All statuses</option>
           <option value="ACTIVE">Published</option>
@@ -332,26 +420,14 @@ function AdminProducts() {
         </select>
       </section>
 
-      {error && (
-        <div className="admin-products-error" role="alert">
-          {error}
-        </div>
-      )}
-
-      {success && (
-        <div className="admin-products-success" role="status">
-          {success}
-        </div>
-      )}
+      {error && <div className="admin-products-error" role="alert">{error}</div>}
+      {success && <div className="admin-products-success" role="status">{success}</div>}
 
       {showCreateForm && (
         <section className="admin-products-form-panel">
           <div className="admin-products-form-header">
             <div>
-              <p className="admin-products-eyebrow">
-                NEW COLLECTION PIECE
-              </p>
-
+              <p className="admin-products-eyebrow">NEW COLLECTION PIECE</p>
               <h2>Add Product</h2>
             </div>
 
@@ -366,11 +442,7 @@ function AdminProducts() {
             </button>
           </div>
 
-          {formError && (
-            <div className="admin-products-error" role="alert">
-              {formError}
-            </div>
-          )}
+          {formError && <div className="admin-products-error" role="alert">{formError}</div>}
 
           <form onSubmit={handleCreateProduct}>
             <div className="admin-products-form-grid">
@@ -379,9 +451,7 @@ function AdminProducts() {
                 <input
                   name="name"
                   value={formData.name}
-                  onChange={(event) =>
-                    handleProductNameChange(event.target.value)
-                  }
+                  onChange={(event) => handleProductNameChange(event.target.value)}
                   placeholder="e.g. Himora Horizon"
                   minLength={2}
                   maxLength={255}
@@ -395,9 +465,6 @@ function AdminProducts() {
                   name="slug"
                   value={formData.slug}
                   onChange={handleFormChange}
-                  placeholder="himora-horizon"
-                  minLength={2}
-                  maxLength={255}
                   pattern="[a-z0-9]+(-[a-z0-9]+)*"
                   title="Use lowercase letters, numbers, and hyphens."
                   required
@@ -413,12 +480,8 @@ function AdminProducts() {
                   required
                 >
                   <option value="">Select category</option>
-
                   {categories.map((category) => (
-                    <option
-                      key={category.id}
-                      value={String(category.id)}
-                    >
+                    <option key={category.id} value={String(category.id)}>
                       {category.name}
                     </option>
                   ))}
@@ -439,6 +502,22 @@ function AdminProducts() {
                 />
               </label>
 
+              <label className="admin-products-field">
+                Initial stock quantity *
+                <input
+                  name="stock_quantity"
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={formData.stock_quantity}
+                  onChange={handleFormChange}
+                  required
+                />
+                <span className="admin-products-help">
+                  Enter the number of units currently in stock.
+                </span>
+              </label>
+
               <label className="admin-products-field admin-products-field-full">
                 Description
                 <textarea
@@ -451,46 +530,57 @@ function AdminProducts() {
               </label>
             </div>
 
+            <div className="admin-products-upload">
+              <div>
+                <p className="admin-products-upload-title">Product image</p>
+                <p className="admin-products-help">
+                  JPEG, PNG, or WebP · Maximum 5 MB
+                </p>
+              </div>
+
+              <label className="admin-products-file-picker">
+                <ImagePlus size={17} />
+                Choose image
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handleImageChange}
+                />
+              </label>
+
+              {imagePreview && (
+                <div className="admin-products-image-preview">
+                  <img src={imagePreview} alt="Selected product preview" />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedImage(null);
+                      setImagePreview("");
+                    }}
+                  >
+                    <X size={14} /> Remove image
+                  </button>
+                </div>
+              )}
+            </div>
+
             <div className="admin-products-options">
-              <label>
-                <input
-                  type="checkbox"
-                  name="is_active"
-                  checked={formData.is_active}
-                  onChange={handleFormChange}
-                />
-                Published
-              </label>
-
-              <label>
-                <input
-                  type="checkbox"
-                  name="is_featured"
-                  checked={formData.is_featured}
-                  onChange={handleFormChange}
-                />
-                Featured
-              </label>
-
-              <label>
-                <input
-                  type="checkbox"
-                  name="is_new"
-                  checked={formData.is_new}
-                  onChange={handleFormChange}
-                />
-                New arrival
-              </label>
-
-              <label>
-                <input
-                  type="checkbox"
-                  name="is_limited"
-                  checked={formData.is_limited}
-                  onChange={handleFormChange}
-                />
-                Limited edition
-              </label>
+              {[
+                ["is_active", "Published"],
+                ["is_featured", "Featured"],
+                ["is_new", "New arrival"],
+                ["is_limited", "Limited edition"],
+              ].map(([name, label]) => (
+                <label key={name}>
+                  <input
+                    type="checkbox"
+                    name={name}
+                    checked={formData[name]}
+                    onChange={handleFormChange}
+                  />
+                  {label}
+                </label>
+              ))}
             </div>
 
             <div className="admin-products-form-actions">
@@ -518,24 +608,16 @@ function AdminProducts() {
 
       <section className="admin-products-summary">
         <span>
-          {filteredProducts.length}{" "}
-          {filteredProducts.length === 1 ? "product" : "products"}
+          {filteredProducts.length} {filteredProducts.length === 1 ? "product" : "products"}
         </span>
-
-        <span>
-          {products.filter((product) => product.is_active).length} published
-        </span>
+        <span>{products.filter((product) => product.is_active).length} published</span>
       </section>
 
       <section className="admin-products-table-wrapper">
         {loading ? (
-          <div className="admin-products-empty">
-            Loading collection...
-          </div>
+          <div className="admin-products-empty">Loading collection...</div>
         ) : filteredProducts.length === 0 ? (
-          <div className="admin-products-empty">
-            No products match your search.
-          </div>
+          <div className="admin-products-empty">No products match your search.</div>
         ) : (
           <table className="admin-products-table">
             <thead>
@@ -543,62 +625,67 @@ function AdminProducts() {
                 <th>Product</th>
                 <th>Category</th>
                 <th>Price</th>
+                <th>Stock</th>
                 <th>Collection</th>
                 <th>Status</th>
               </tr>
             </thead>
-
             <tbody>
-              {filteredProducts.map((product) => (
-                <tr key={product.id}>
-                  <td>
-                    <div className="admin-products-name">
-                      <strong>{product.name}</strong>
-                      <span>{product.slug}</span>
-                    </div>
-                  </td>
+              {filteredProducts.map((product) => {
+                const primaryImage =
+                  product.images?.find((image) => image.is_primary) ||
+                  product.images?.[0];
 
-                  <td>{product.category?.name || "Uncategorized"}</td>
+                return (
+                  <tr key={product.id}>
+                    <td>
+                      <div className="admin-products-product-cell">
+                        {primaryImage ? (
+                          <img
+                            className="admin-products-thumbnail"
+                            src={imageUrl(primaryImage.image_url)}
+                            alt={primaryImage.alt_text || product.name}
+                          />
+                        ) : (
+                          <div className="admin-products-thumbnail-placeholder">
+                            <ImagePlus size={18} />
+                          </div>
+                        )}
+                        <div className="admin-products-name">
+                          <strong>{product.name}</strong>
+                          <span>{product.slug}</span>
+                        </div>
+                      </div>
+                    </td>
 
-                  <td className="admin-products-price">
-                    {formatCurrency(product.price)}
-                  </td>
+                    <td>{product.category?.name || "Uncategorized"}</td>
+                    <td className="admin-products-price">{formatCurrency(product.price)}</td>
+                    <td>
+                      <span className="admin-products-stock">
+                        <Package size={14} />
+                        {product.stock_quantity === null
+                          ? "Unavailable"
+                          : `${product.stock_quantity} units`}
+                      </span>
+                    </td>
 
-                  <td>
-                    <div className="admin-products-tags">
-                      {product.is_featured && (
-                        <span className="admin-products-tag">
-                          Featured
-                        </span>
-                      )}
+                    <td>
+                      <div className="admin-products-tags">
+                        {product.is_featured && <span className="admin-products-tag">Featured</span>}
+                        {product.is_new && <span className="admin-products-tag">New</span>}
+                        {product.is_limited && <span className="admin-products-tag">Limited</span>}
+                        {!product.is_featured && !product.is_new && !product.is_limited && "—"}
+                      </div>
+                    </td>
 
-                      {product.is_new && (
-                        <span className="admin-products-tag">New</span>
-                      )}
-
-                      {product.is_limited && (
-                        <span className="admin-products-tag">
-                          Limited
-                        </span>
-                      )}
-
-                      {!product.is_featured &&
-                        !product.is_new &&
-                        !product.is_limited && <span>—</span>}
-                    </div>
-                  </td>
-
-                  <td>
-                    <span
-                      className={`admin-products-status ${
-                        product.is_active ? "is-active" : "is-inactive"
-                      }`}
-                    >
-                      {product.is_active ? "Published" : "Inactive"}
-                    </span>
-                  </td>
-                </tr>
-              ))}
+                    <td>
+                      <span className={`admin-products-status ${product.is_active ? "is-active" : "is-inactive"}`}>
+                        {product.is_active ? "Published" : "Inactive"}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}

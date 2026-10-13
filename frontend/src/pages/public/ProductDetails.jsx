@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
@@ -12,9 +11,21 @@ import "./ProductDetails.css";
 const API_BASE_URL =
     import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
+function getImageUrl(imageUrl) {
+    if (!imageUrl) return null;
+
+    if (/^https?:\/\//i.test(imageUrl)) {
+        return imageUrl;
+    }
+
+    return `${API_BASE_URL.replace(/\/$/, "")}/${imageUrl.replace(/^\//, "")}`;
+}
+
 function ProductDetails() {
-    const { productId } = useParams();
+    const { productId, slug } = useParams();
     const navigate = useNavigate();
+
+    const productIdentifier = productId || slug;
 
     const [product, setProduct] = useState(null);
     const [variants, setVariants] = useState([]);
@@ -34,10 +45,8 @@ function ProductDetails() {
                 setLoading(true);
                 setError("");
 
-                const productData = await getProduct(productId);
-                const variantData = await getProductVariants(
-                    productData.id
-                );
+                const productData = await getProduct(productIdentifier);
+                const variantData = await getProductVariants(productData.id);
 
                 if (cancelled) return;
 
@@ -64,19 +73,24 @@ function ProductDetails() {
             }
         }
 
-        loadProduct();
+        if (productIdentifier) {
+            loadProduct();
+        } else {
+            setError("Product not found.");
+            setLoading(false);
+        }
 
         return () => {
             cancelled = true;
         };
-    }, [productId]);
+    }, [productIdentifier]);
 
     async function handleAddToBag() {
         const token = localStorage.getItem("access_token");
 
         if (!token) {
             navigate("/login", {
-                state: { from: `/products/${productId}` },
+                state: { from: `/products/${product.slug || product.id}` },
             });
             return;
         }
@@ -88,20 +102,17 @@ function ProductDetails() {
         setMessageType("");
 
         try {
-            const response = await fetch(
-                `${API_BASE_URL}/api/cart/items`,
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${token}`,
-                    },
-                    body: JSON.stringify({
-                        variant_id: selectedVariant.id,
-                        quantity: 1,
-                    }),
-                }
-            );
+            const response = await fetch(`${API_BASE_URL}/api/cart/items`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    variant_id: selectedVariant.id,
+                    quantity: 1,
+                }),
+            });
 
             const data = await response.json().catch(() => null);
 
@@ -112,13 +123,17 @@ function ProductDetails() {
                 localStorage.removeItem("userName");
 
                 navigate("/login", {
-                    state: { from: `/products/${productId}` },
+                    state: {
+                        from: `/products/${product.slug || product.id}`,
+                    },
                 });
+
                 return;
             }
 
             if (!response.ok) {
                 const detail = data?.detail;
+
                 const errorMessage = Array.isArray(detail)
                     ? detail.map((item) => item.msg).join(", ")
                     : typeof detail === "string"
@@ -131,7 +146,6 @@ function ProductDetails() {
             setMessage("Added to your bag successfully.");
             setMessageType("success");
 
-            // Refresh stock information after adding the item.
             const updatedVariants = await getProductVariants(product.id);
             setVariants(updatedVariants);
 
@@ -175,6 +189,8 @@ function ProductDetails() {
         product.images?.find((image) => image.is_primary) ||
         product.images?.[0];
 
+    const imageUrl = getImageUrl(primaryImage?.image_url);
+
     const availableQuantity =
         selectedVariant?.inventory?.available_quantity ?? 0;
 
@@ -192,12 +208,17 @@ function ProductDetails() {
                 <div className="product-details-layout">
                     <section className="product-details-gallery">
                         <div className="product-details-main-image">
-                            {primaryImage ? (
+                            {imageUrl ? (
                                 <img
-                                    src={primaryImage.image_url}
+                                    src={imageUrl}
                                     alt={
-                                        primaryImage.alt_text || product.name
+                                        primaryImage?.alt_text ||
+                                        product.name
                                     }
+                                    onError={(event) => {
+                                        event.currentTarget.style.display =
+                                            "none";
+                                    }}
                                 />
                             ) : (
                                 <div className="product-details-placeholder">
@@ -215,7 +236,7 @@ function ProductDetails() {
                         <h1 className="display-text">{product.name}</h1>
 
                         <p className="product-details-price">
-                            NPR {Number(product.price).toLocaleString()}
+                            NPR {Number(product.price).toLocaleString("en-NP")}
                         </p>
 
                         {product.description && (
@@ -279,9 +300,7 @@ function ProductDetails() {
                         <div className="product-details-stock">
                             {selectedVariant ? (
                                 availableQuantity > 0 ? (
-                                    <span>
-                                        {availableQuantity} available
-                                    </span>
+                                    <span>{availableQuantity} available</span>
                                 ) : (
                                     <span>Currently unavailable</span>
                                 )
@@ -296,14 +315,13 @@ function ProductDetails() {
                             onClick={handleAddToBag}
                             disabled={
                                 !selectedVariant ||
+                                !selectedVariant.is_active ||
                                 availableQuantity <= 0 ||
                                 addingToBag
                             }
                         >
                             <span>
-                                {addingToBag
-                                    ? "Adding..."
-                                    : "Add to bag"}
+                                {addingToBag ? "Adding..." : "Add to bag"}
                             </span>
                             <span>{addingToBag ? "…" : "→"}</span>
                         </button>
@@ -322,9 +340,7 @@ function ProductDetails() {
                                 {messageType === "success" && (
                                     <>
                                         {" "}
-                                        <Link to="/cart">
-                                            View bag →
-                                        </Link>
+                                        <Link to="/cart">View bag →</Link>
                                     </>
                                 )}
                             </p>

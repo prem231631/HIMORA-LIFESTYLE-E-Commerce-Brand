@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from app.core.security import create_access_token, hash_password, verify_password
 from app.database.session import get_db
 from app.models import Cart, User
-from app.schemas import LoginRequest, LoginResponse, RegisterRequest, UserResponse
+from app.schemas import LoginRequest, LoginResponse, RegisterRequest, UpdateProfileRequest, UserResponse
 
 from app.core.security import get_current_user
 
@@ -110,4 +110,38 @@ def login(
 def get_me(
     current_user: User = Depends(get_current_user),
 ):
+    return current_user
+
+
+
+@router.patch(
+    "/me",
+    response_model=UserResponse,
+)
+def update_me(
+    profile_data: UpdateProfileRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    # Check whether the phone number belongs to another user.
+    if profile_data.phone:
+        existing_phone = db.scalar(
+            select(User).where(
+                User.phone == profile_data.phone,
+                User.id != current_user.id,
+            )
+        )
+
+        if existing_phone:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="This phone number is already registered.",
+            )
+
+    current_user.full_name = profile_data.full_name.strip()
+    current_user.phone = profile_data.phone
+
+    db.commit()
+    db.refresh(current_user)
+
     return current_user

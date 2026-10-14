@@ -1,24 +1,19 @@
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import {
   Activity,
-  AlertTriangle,
   ArrowDownRight,
   ArrowRight,
   ArrowUpRight,
   Boxes,
-  CheckCircle2,
-  CircleDollarSign,
-  Clock3,
-  Layers3,
-  LoaderCircle,
+  ClipboardList,
+  FolderTree,
   Package,
   RefreshCw,
-  ShoppingBag,
-  ShoppingCart,
   ShieldCheck,
+  ShoppingBag,
   Users,
-  XCircle,
+  AlertCircle,
 } from "lucide-react";
 import "./AdminDashboard.css";
 
@@ -33,12 +28,49 @@ function getAuthToken() {
   );
 }
 
+async function apiRequest(path) {
+  const token = getAuthToken();
+
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+
+  const data =
+    response.status === 204
+      ? null
+      : await response.json().catch(() => null);
+
+  if (!response.ok) {
+    throw new Error(
+      data?.detail ||
+        data?.message ||
+        `Request failed with status ${response.status}`
+    );
+  }
+
+  return data;
+}
+
+function getArray(payload, keys = []) {
+  if (Array.isArray(payload)) return payload;
+
+  for (const key of keys) {
+    if (Array.isArray(payload?.[key])) return payload[key];
+  }
+
+  return [];
+}
+
 function formatCurrency(value) {
+  const amount = Number(value || 0);
+
   return new Intl.NumberFormat("en-NP", {
     style: "currency",
     currency: "NPR",
-    maximumFractionDigits: 2,
-  }).format(Number(value || 0));
+    maximumFractionDigits: 0,
+  }).format(Number.isFinite(amount) ? amount : 0);
 }
 
 function formatDate(value) {
@@ -48,539 +80,565 @@ function formatDate(value) {
 
   if (Number.isNaN(date.getTime())) return "—";
 
-  return date.toLocaleDateString("en-NP", {
-    year: "numeric",
-    month: "short",
+  return date.toLocaleDateString(undefined, {
     day: "numeric",
+    month: "short",
+    year: "numeric",
   });
 }
 
-function getStatusClass(value) {
-  const normalized = String(value || "").toLowerCase().replaceAll("_", "-");
-
-  if (["delivered", "paid", "active", "confirmed"].includes(normalized)) {
-    return "success";
-  }
-
-  if (["pending", "processing", "out-for-delivery"].includes(normalized)) {
-    return "warning";
-  }
-
-  if (["cancelled", "failed", "inactive", "refunded"].includes(normalized)) {
-    return "danger";
-  }
-
-  if (["shipped"].includes(normalized)) {
-    return "info";
-  }
-
-  return "neutral";
-}
-
-function StatCard({
-  title,
-  value,
-  description,
-  icon: Icon,
-  accent,
-  loading,
-}) {
-  return (
-    <article className={`admin-stat-card accent-${accent}`}>
-      <div className="admin-stat-top">
-        <span className="admin-stat-label">{title}</span>
-        <span className="admin-stat-icon">
-          <Icon size={20} strokeWidth={1.7} />
-        </span>
-      </div>
-
-      <div className="admin-stat-value">
-        {loading ? (
-          <LoaderCircle className="admin-inline-loader" size={22} />
-        ) : (
-          value
-        )}
-      </div>
-
-      <div className="admin-stat-description">{description}</div>
-    </article>
+function getOrderTotal(order) {
+  return Number(
+    order.total_amount ??
+      order.total ??
+      order.grand_total ??
+      order.amount ??
+      0
   );
 }
 
-function AdminDashboard() {
-  const navigate = useNavigate();
+function getOrderStatus(order) {
+  return String(order.status || order.order_status || "pending")
+    .toLowerCase()
+    .replaceAll("_", " ");
+}
 
-  const [dashboard, setDashboard] = useState(null);
+function getCustomerName(order) {
+  return (
+    order.customer_name ||
+    order.user?.full_name ||
+    order.user?.name ||
+    order.shipping_address?.full_name ||
+    order.shipping_address?.name ||
+    order.customer?.full_name ||
+    order.customer?.name ||
+    order.user?.email ||
+    "Customer"
+  );
+}
+
+export default function AdminDashboard() {
+  const [orders, setOrders] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [inventory, setInventory] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
+  const [lastUpdated, setLastUpdated] = useState(null);
 
-  const fetchDashboard = useCallback(async (isRefresh = false) => {
-    const token = getAuthToken();
-
-    if (!token) {
-      navigate("/login", { replace: true });
-      return;
-    }
-
-    if (isRefresh) {
-      setRefreshing(true);
-    } else {
-      setLoading(true);
-    }
-
+  const loadDashboard = useCallback(async () => {
+    setLoading(true);
     setError("");
 
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/admin/dashboard`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: "application/json",
-        },
-      });
+    const requests = [
+      {
+        name: "orders",
+        path: "/api/orders/admin",
+        keys: ["orders", "items", "results"],
+      },
+      {
+        name: "products",
+        path: "/api/products",
+        keys: ["products", "items", "results"],
+      },
+      {
+        name: "categories",
+        path: "/api/categories",
+        keys: ["categories", "items", "results"],
+      },
+      {
+        name: "users",
+        path: "/api/admin/users",
+        keys: ["users", "items", "results"],
+      },
+      {
+        name: "inventory",
+        path: "/api/inventory/admin",
+        keys: ["inventory", "items", "results"],
+      },
+    ];
 
-      if (response.status === 401) {
-        localStorage.removeItem("access_token");
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        navigate("/login", { replace: true });
-        return;
+    const results = await Promise.allSettled(
+      requests.map((request) => apiRequest(request.path))
+    );
+
+    const loaded = {};
+    const failures = [];
+
+    results.forEach((result, index) => {
+      const request = requests[index];
+
+      if (result.status === "fulfilled") {
+        loaded[request.name] = getArray(result.value, request.keys);
+      } else {
+        loaded[request.name] = [];
+        failures.push(request.name);
       }
+    });
 
-      if (response.status === 403) {
-        setError("You do not have permission to access the admin dashboard.");
-        return;
-      }
+    setOrders(loaded.orders || []);
+    setProducts(loaded.products || []);
+    setCategories(loaded.categories || []);
+    setUsers(loaded.users || []);
+    setInventory(loaded.inventory || []);
+    setLastUpdated(new Date());
 
-      if (!response.ok) {
-        const body = await response.json().catch(() => ({}));
-        throw new Error(body.detail || "Unable to load dashboard data.");
-      }
-
-      const data = await response.json();
-      setDashboard(data);
-    } catch (err) {
-      setError(err.message || "Unable to connect to the server.");
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
+    if (failures.length === requests.length) {
+      setError(
+        "Dashboard data could not be loaded. Check your API connection and admin permissions."
+      );
+    } else if (failures.length > 0) {
+      setError(
+        `Some dashboard data could not be loaded: ${failures.join(", ")}. Verify the corresponding API endpoints.`
+      );
     }
-  }, [navigate]);
+
+    setLoading(false);
+  }, []);
 
   useEffect(() => {
-    fetchDashboard();
-  }, [fetchDashboard]);
+    loadDashboard();
+  }, [loadDashboard]);
+
+  const totalRevenue = orders
+    .filter((order) => {
+      const status = getOrderStatus(order);
+      return !["cancelled", "refunded", "failed"].includes(status);
+    })
+    .reduce((total, order) => total + getOrderTotal(order), 0);
+
+  const pendingOrders = orders.filter((order) => {
+    const status = getOrderStatus(order);
+    return ["pending", "processing", "confirmed"].includes(status);
+  }).length;
+
+  const lowStockItems = inventory.filter((item) => {
+    const available = Number(
+      item.available_quantity ??
+        item.stock_quantity ??
+        item.quantity ??
+        0
+    );
+
+    return available <= Number(item.low_stock_threshold ?? 5);
+  });
+
+  const recentOrders = [...orders]
+    .sort((a, b) => {
+      const dateA = new Date(
+        a.created_at || a.order_date || a.updated_at || 0
+      ).getTime();
+
+      const dateB = new Date(
+        b.created_at || b.order_date || b.updated_at || 0
+      ).getTime();
+
+      return dateB - dateA;
+    })
+    .slice(0, 6);
 
   const stats = [
     {
-      title: "Total Revenue",
-      value: formatCurrency(dashboard?.total_revenue),
-      description: "Revenue from delivered orders",
-      icon: CircleDollarSign,
-      accent: "gold",
+      label: "Total Revenue",
+      value: formatCurrency(totalRevenue),
+      description: "From recorded orders",
+      icon: Activity,
+      className: "admin-dashboard__stat-icon--gold",
+      href: "/admin/orders",
     },
     {
-      title: "Total Orders",
-      value: dashboard?.total_orders ?? 0,
-      description: "All customer orders",
-      icon: ShoppingCart,
-      accent: "blue",
+      label: "Total Orders",
+      value: orders.length.toLocaleString(),
+      description: `${pendingOrders} pending or processing`,
+      icon: ShoppingBag,
+      className: "admin-dashboard__stat-icon--green",
+      href: "/admin/orders",
     },
     {
-      title: "Products",
-      value: dashboard?.total_products ?? 0,
-      description: `${dashboard?.active_products ?? 0} active products`,
+      label: "Products",
+      value: products.length.toLocaleString(),
+      description: "Products in the catalogue",
       icon: Package,
-      accent: "purple",
+      className: "admin-dashboard__stat-icon--neutral",
+      href: "/admin/products",
     },
     {
-      title: "Customers",
-      value: dashboard?.total_users ?? 0,
-      description: `${dashboard?.active_users ?? 0} active accounts`,
+      label: "Customers",
+      value: users.length.toLocaleString(),
+      description: "Registered accounts",
       icon: Users,
-      accent: "green",
+      className: "admin-dashboard__stat-icon--gold",
+      href: "/admin/users",
     },
   ];
 
   const quickLinks = [
     {
       title: "Manage Products",
-      description: "Create, edit and organize products.",
+      description: "Update product details, prices, and availability.",
       icon: Package,
-      path: "/admin/products",
+      href: "/admin/products",
     },
     {
       title: "Manage Categories",
-      description: "Organize your product collections.",
-      icon: Layers3,
-      path: "/admin/categories",
-    },
-    {
-      title: "Manage Orders",
-      description: "Review orders and update their status.",
-      icon: ShoppingBag,
-      path: "/admin/orders",
+      description: "Organize the storefront product catalogue.",
+      icon: FolderTree,
+      href: "/admin/categories",
     },
     {
       title: "Manage Inventory",
-      description: "Review stock and low-stock items.",
+      description: "Review stock levels and inventory adjustments.",
       icon: Boxes,
-      path: "/admin/inventory",
+      href: "/admin/inventory",
+    },
+    {
+      title: "Manage Orders",
+      description: "Review orders and update fulfilment status.",
+      icon: ClipboardList,
+      href: "/admin/orders",
     },
     {
       title: "Manage Customers",
-      description: "View customers and account status.",
+      description: "Review customer accounts and account access.",
       icon: Users,
-      path: "/admin/users",
-    },
-    {
-      title: "Manage Payments",
-      description: "Review payment records and statuses.",
-      icon: CircleDollarSign,
-      path: "/admin/payments",
+      href: "/admin/users",
     },
   ];
 
   return (
     <main className="admin-dashboard">
-      <header className="admin-dashboard-header">
+      <header className="admin-dashboard__header">
         <div>
-          <div className="admin-eyebrow">
-            <ShieldCheck size={14} />
-            HIMORA LIFESTYLE
-          </div>
-
-          <h1>Dashboard</h1>
-
-          <p>
-            An overview of your store, orders, customers and inventory.
+          <span className="admin-dashboard__eyebrow">
+            HIMORA LIFESTYLE / ADMINISTRATION
+          </span>
+          <h1 className="admin-dashboard__title">Dashboard Overview</h1>
+          <p className="admin-dashboard__subtitle">
+            A clear overview of your store, orders, customers, and inventory.
           </p>
         </div>
 
         <button
           type="button"
-          className="admin-refresh-button"
-          onClick={() => fetchDashboard(true)}
-          disabled={loading || refreshing}
+          className="admin-dashboard__refresh"
+          onClick={loadDashboard}
+          disabled={loading}
         >
           <RefreshCw
-            size={16}
-            className={refreshing ? "admin-spin" : ""}
+            size={15}
+            className={loading ? "admin-dashboard__spin" : ""}
           />
-          Refresh
+          Refresh Overview
         </button>
       </header>
 
-      {error && (
-        <section className="admin-error-panel" role="alert">
-          <AlertTriangle size={20} />
-          <div>
-            <strong>Dashboard unavailable</strong>
-            <p>{error}</p>
-          </div>
-          <button
-            type="button"
-            onClick={() => fetchDashboard(true)}
-            className="admin-retry-button"
-          >
-            Retry
-          </button>
-        </section>
-      )}
-
-      <section className="admin-welcome-panel">
-        <div className="admin-welcome-content">
-          <span className="admin-welcome-label">STORE OVERVIEW</span>
-          <h2>Welcome to your command center.</h2>
+      <section className="admin-dashboard__welcome">
+        <div className="admin-dashboard__welcome-copy">
+          <span className="admin-dashboard__welcome-label">
+            STORE MANAGEMENT
+          </span>
+          <h2>Welcome to your control room.</h2>
           <p>
-            Monitor store performance and manage your luxury shopping
-            experience from one place.
+            Manage your luxury storefront with a unified view of its essential
+            operations.
           </p>
         </div>
 
-        <div className="admin-welcome-mark" aria-hidden="true">
+        <div className="admin-dashboard__welcome-mark" aria-hidden="true">
           <span>H</span>
-          <span className="admin-welcome-mark-line" />
-          <small>HIMORA</small>
+          <i />
         </div>
       </section>
 
-      <section className="admin-stats-grid" aria-label="Store statistics">
-        {stats.map((stat) => (
-          <StatCard
-            key={stat.title}
-            {...stat}
-            loading={loading && !dashboard}
-          />
-        ))}
+      {error && (
+        <div className="admin-dashboard__alert">
+          <AlertCircle size={17} />
+          <span>{error}</span>
+        </div>
+      )}
+
+      <section className="admin-dashboard__section">
+        <div className="admin-dashboard__section-heading">
+          <div>
+            <span className="admin-dashboard__section-eyebrow">
+              AT A GLANCE
+            </span>
+            <h2>Store Performance</h2>
+          </div>
+
+          {lastUpdated && (
+            <span className="admin-dashboard__updated">
+              Updated{" "}
+              {lastUpdated.toLocaleTimeString(undefined, {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </span>
+          )}
+        </div>
+
+        <div className="admin-dashboard__stats">
+          {stats.map((stat) => {
+            const Icon = stat.icon;
+
+            return (
+              <Link
+                className="admin-dashboard__stat-card"
+                key={stat.label}
+                to={stat.href}
+              >
+                <div className="admin-dashboard__stat-top">
+                  <span className="admin-dashboard__stat-label">
+                    {stat.label}
+                  </span>
+                  <span
+                    className={`admin-dashboard__stat-icon ${stat.className}`}
+                  >
+                    <Icon size={19} />
+                  </span>
+                </div>
+
+                <strong className="admin-dashboard__stat-value">
+                  {loading ? "—" : stat.value}
+                </strong>
+
+                <span className="admin-dashboard__stat-description">
+                  {stat.description}
+                </span>
+
+                <span className="admin-dashboard__stat-link">
+                  View details <ArrowRight size={13} />
+                </span>
+              </Link>
+            );
+          })}
+        </div>
       </section>
 
-      <section className="admin-dashboard-columns">
-        <div className="admin-panel admin-orders-panel">
-          <div className="admin-panel-header">
+      <section className="admin-dashboard__main-grid">
+        <div className="admin-dashboard__panel admin-dashboard__orders-panel">
+          <div className="admin-dashboard__panel-header">
             <div>
-              <span className="admin-section-kicker">LATEST ACTIVITY</span>
+              <span className="admin-dashboard__section-eyebrow">
+                LATEST ACTIVITY
+              </span>
               <h2>Recent Orders</h2>
+              <p>Your latest customer purchases.</p>
             </div>
 
-            <button
-              type="button"
-              className="admin-text-link"
-              onClick={() => navigate("/admin/orders")}
+            <Link
+              to="/admin/orders"
+              className="admin-dashboard__text-link"
             >
-              View all <ArrowRight size={15} />
-            </button>
+              View all <ArrowRight size={14} />
+            </Link>
           </div>
 
-          <div className="admin-order-summary">
-            <div>
-              <span className="admin-summary-icon pending">
-                <Clock3 size={17} />
-              </span>
-              <div>
-                <span>Pending</span>
-                <strong>{dashboard?.pending_orders ?? 0}</strong>
+          {loading ? (
+            <div className="admin-dashboard__state">
+              Loading recent orders...
+            </div>
+          ) : recentOrders.length === 0 ? (
+            <div className="admin-dashboard__state">
+              <div className="admin-dashboard__state-icon">
+                <ShoppingBag size={22} />
               </div>
-            </div>
-
-            <div>
-              <span className="admin-summary-icon delivered">
-                <CheckCircle2 size={17} />
-              </span>
-              <div>
-                <span>Delivered</span>
-                <strong>{dashboard?.delivered_orders ?? 0}</strong>
-              </div>
-            </div>
-
-            <div>
-              <span className="admin-summary-icon cancelled">
-                <XCircle size={17} />
-              </span>
-              <div>
-                <span>Cancelled</span>
-                <strong>{dashboard?.cancelled_orders ?? 0}</strong>
-              </div>
-            </div>
-          </div>
-
-          {loading && !dashboard ? (
-            <div className="admin-loading-state">
-              <LoaderCircle className="admin-spin" size={24} />
-              <span>Loading recent orders...</span>
-            </div>
-          ) : dashboard?.recent_orders?.length ? (
-            <div className="admin-orders-list">
-              {dashboard.recent_orders.map((order, index) => (
-                <button
-                  type="button"
-                  className="admin-order-row"
-                  key={order.id ?? order.order_number ?? index}
-                  onClick={() => navigate("/admin/orders")}
-                >
-                  <span className="admin-order-avatar">
-                    <ShoppingBag size={17} />
-                  </span>
-
-                  <span className="admin-order-main">
-                    <strong>
-                      {order.order_number || `Order #${order.id}`}
-                    </strong>
-                    <small>
-                      {order.customer_name || order.shipping_full_name || "Customer"}
-                      {" · "}
-                      {formatDate(order.created_at)}
-                    </small>
-                  </span>
-
-                  <span className="admin-order-end">
-                    <strong>
-                      {formatCurrency(order.total_amount)}
-                    </strong>
-                    <span
-                      className={`admin-status-pill ${getStatusClass(order.status)}`}
-                    >
-                      {String(order.status || "Unknown").replaceAll("_", " ")}
-                    </span>
-                  </span>
-                </button>
-              ))}
+              <h3>No orders yet</h3>
+              <p>New customer orders will appear here.</p>
             </div>
           ) : (
-            <div className="admin-empty-state">
-              <ShoppingBag size={28} />
-              <strong>No orders yet</strong>
-              <span>New customer orders will appear here.</span>
+            <div className="admin-dashboard__orders">
+              {recentOrders.map((order) => {
+                const status = getOrderStatus(order);
+                const isCompleted = [
+                  "completed",
+                  "delivered",
+                  "paid",
+                ].includes(status);
+                const isCancelled = [
+                  "cancelled",
+                  "failed",
+                  "refunded",
+                ].includes(status);
+
+                return (
+                  <Link
+                    to={`/admin/orders/${order.id}`}
+                    className="admin-dashboard__order-row"
+                    key={order.id}
+                  >
+                    <div className="admin-dashboard__order-icon">
+                      <ShoppingBag size={16} />
+                    </div>
+
+                    <div className="admin-dashboard__order-info">
+                      <strong>
+                        Order #{order.order_number || order.id}
+                      </strong>
+                      <span>{getCustomerName(order)}</span>
+                      <small>
+                        {formatDate(
+                          order.created_at ||
+                            order.order_date ||
+                            order.updated_at
+                        )}
+                      </small>
+                    </div>
+
+                    <div className="admin-dashboard__order-end">
+                      <strong>{formatCurrency(getOrderTotal(order))}</strong>
+                      <span
+                        className={`admin-dashboard__status ${
+                          isCompleted
+                            ? "admin-dashboard__status--completed"
+                            : isCancelled
+                              ? "admin-dashboard__status--cancelled"
+                              : "admin-dashboard__status--pending"
+                        }`}
+                      >
+                        {status}
+                      </span>
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
           )}
         </div>
 
-        <div className="admin-panel admin-performance-panel">
-          <div className="admin-panel-header">
-            <div>
-              <span className="admin-section-kicker">STORE HEALTH</span>
-              <h2>Performance Snapshot</h2>
-            </div>
-            <Activity size={19} className="admin-panel-header-icon" />
-          </div>
-
-          <div className="admin-performance-list">
-            <div className="admin-performance-item">
-              <div className="admin-performance-label">
-                <span>Active products</span>
-                <strong>
-                  {dashboard?.total_products
-                    ? Math.round(
-                        ((dashboard.active_products || 0) /
-                          dashboard.total_products) *
-                          100
-                      )
-                    : 0}
-                  %
-                </strong>
-              </div>
-              <div className="admin-progress-track">
-                <span
-                  className="admin-progress-fill gold"
-                  style={{
-                    width: `${
-                      dashboard?.total_products
-                        ? Math.min(
-                            100,
-                            ((dashboard.active_products || 0) /
-                              dashboard.total_products) *
-                              100
-                          )
-                        : 0
-                    }%`,
-                  }}
-                />
-              </div>
-            </div>
-
-            <div className="admin-performance-item">
-              <div className="admin-performance-label">
-                <span>Active customers</span>
-                <strong>
-                  {dashboard?.total_users
-                    ? Math.round(
-                        ((dashboard.active_users || 0) /
-                          dashboard.total_users) *
-                          100
-                      )
-                    : 0}
-                  %
-                </strong>
-              </div>
-              <div className="admin-progress-track">
-                <span
-                  className="admin-progress-fill green"
-                  style={{
-                    width: `${
-                      dashboard?.total_users
-                        ? Math.min(
-                            100,
-                            ((dashboard.active_users || 0) /
-                              dashboard.total_users) *
-                              100
-                          )
-                        : 0
-                    }%`,
-                  }}
-                />
-              </div>
-            </div>
-
-            <div className="admin-performance-item">
-              <div className="admin-performance-label">
-                <span>Low-stock records</span>
-                <strong className="admin-low-stock-count">
-                  {dashboard?.low_stock_records ?? 0}
-                </strong>
-              </div>
-
-              <p className="admin-performance-note">
-                {(dashboard?.low_stock_records ?? 0) > 0 ? (
-                  <>
-                    <AlertTriangle size={14} />
-                    Some items need stock replenishment.
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 size={14} />
-                    No low-stock records reported.
-                  </>
-                )}
-              </p>
-            </div>
-
-            <div className="admin-performance-item">
-              <div className="admin-performance-label">
-                <span>Inventory records</span>
-                <strong>{dashboard?.total_inventory_records ?? 0}</strong>
-              </div>
-              <p className="admin-performance-note">
-                Stock records across product variants.
-              </p>
-            </div>
-
-            <div className="admin-performance-item admin-revenue-note">
-              <span className="admin-revenue-icon">
-                <CircleDollarSign size={18} />
-              </span>
+        <aside className="admin-dashboard__side-column">
+          <div className="admin-dashboard__panel admin-dashboard__inventory-panel">
+            <div className="admin-dashboard__panel-header">
               <div>
-                <strong>Delivered-order revenue</strong>
-                <span>{formatCurrency(dashboard?.total_revenue)}</span>
+                <span className="admin-dashboard__section-eyebrow">
+                  STOCK CONTROL
+                </span>
+                <h2>Inventory Watch</h2>
               </div>
-              {Number(dashboard?.total_revenue || 0) > 0 ? (
-                <ArrowUpRight size={17} className="admin-revenue-trend" />
-              ) : (
-                <ArrowDownRight size={17} className="admin-revenue-trend" />
-              )}
+
+              <span className="admin-dashboard__inventory-icon">
+                <Boxes size={18} />
+              </span>
             </div>
-          </div>
-        </div>
-      </section>
 
-      <section className="admin-panel admin-quick-actions">
-        <div className="admin-panel-header">
-          <div>
-            <span className="admin-section-kicker">STORE MANAGEMENT</span>
-            <h2>Quick Actions</h2>
-          </div>
-          <span className="admin-quick-actions-count">
-            {quickLinks.length} sections
-          </span>
-        </div>
+            <div className="admin-dashboard__inventory-number">
+              {loading ? "—" : lowStockItems.length}
+            </div>
 
-        <div className="admin-quick-links-grid">
-          {quickLinks.map(({ title, description, icon: Icon, path }) => (
-            <button
-              type="button"
-              className="admin-quick-link"
-              key={path}
-              onClick={() => navigate(path)}
+            <p className="admin-dashboard__inventory-description">
+              Items at or below their configured stock threshold.
+            </p>
+
+            <div className="admin-dashboard__inventory-divider" />
+
+            <div className="admin-dashboard__inventory-summary">
+              <span>Tracked inventory records</span>
+              <strong>{loading ? "—" : inventory.length}</strong>
+            </div>
+
+            <Link
+              to="/admin/inventory"
+              className="admin-dashboard__wide-link"
             >
-              <span className="admin-quick-link-icon">
-                <Icon size={19} strokeWidth={1.7} />
-              </span>
+              Review inventory <ArrowRight size={14} />
+            </Link>
+          </div>
 
-              <span className="admin-quick-link-text">
-                <strong>{title}</strong>
-                <small>{description}</small>
-              </span>
+          <div className="admin-dashboard__panel admin-dashboard__catalog-panel">
+            <div className="admin-dashboard__panel-header">
+              <div>
+                <span className="admin-dashboard__section-eyebrow">
+                  CATALOGUE
+                </span>
+                <h2>Catalogue Summary</h2>
+              </div>
+            </div>
 
-              <ArrowRight
-                size={16}
-                className="admin-quick-link-arrow"
-              />
-            </button>
-          ))}
+            <div className="admin-dashboard__catalog-row">
+              <span className="admin-dashboard__catalog-icon">
+                <Package size={16} />
+              </span>
+              <span>Products</span>
+              <strong>{loading ? "—" : products.length}</strong>
+            </div>
+
+            <div className="admin-dashboard__catalog-row">
+              <span className="admin-dashboard__catalog-icon">
+                <FolderTree size={16} />
+              </span>
+              <span>Categories</span>
+              <strong>{loading ? "—" : categories.length}</strong>
+            </div>
+
+            <div className="admin-dashboard__catalog-row">
+              <span className="admin-dashboard__catalog-icon">
+                <Users size={16} />
+              </span>
+              <span>Customers</span>
+              <strong>{loading ? "—" : users.length}</strong>
+            </div>
+
+            <Link
+              to="/admin/products"
+              className="admin-dashboard__wide-link"
+            >
+              Manage catalogue <ArrowRight size={14} />
+            </Link>
+          </div>
+        </aside>
+      </section>
+
+      <section className="admin-dashboard__section admin-dashboard__quick-section">
+        <div className="admin-dashboard__section-heading">
+          <div>
+            <span className="admin-dashboard__section-eyebrow">
+              QUICK ACCESS
+            </span>
+            <h2>Management Shortcuts</h2>
+          </div>
+        </div>
+
+        <div className="admin-dashboard__quick-grid">
+          {quickLinks.map((item) => {
+            const Icon = item.icon;
+
+            return (
+              <Link
+                to={item.href}
+                className="admin-dashboard__quick-card"
+                key={item.title}
+              >
+                <span className="admin-dashboard__quick-icon">
+                  <Icon size={19} />
+                </span>
+
+                <span className="admin-dashboard__quick-copy">
+                  <strong>{item.title}</strong>
+                  <small>{item.description}</small>
+                </span>
+
+                <ArrowRight
+                  size={16}
+                  className="admin-dashboard__quick-arrow"
+                />
+              </Link>
+            );
+          })}
         </div>
       </section>
+
+      <footer className="admin-dashboard__footer">
+        <span className="admin-dashboard__footer-mark">H</span>
+        <span>HIMORA LIFESTYLE</span>
+        <i />
+        <span>Administration</span>
+        <span className="admin-dashboard__footer-spacer" />
+        <span className="admin-dashboard__footer-security">
+          <ShieldCheck size={14} />
+          Secure management
+        </span>
+      </footer>
     </main>
   );
 }
-
-export default AdminDashboard;

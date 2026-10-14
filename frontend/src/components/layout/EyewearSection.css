@@ -1,7 +1,15 @@
 .eyewear-section {
-    padding: 30px 0 110px;
-    background: var(--color-ivory);
+    padding: 110px 0 120px;
+    background: var(--color-stone);
     color: var(--color-obsidian);
+}
+
+.eyewear-section .container {
+    width: 100%;
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 0 32px;
+    box-sizing: border-box;
 }
 
 .eyewear-intro {
@@ -12,6 +20,8 @@
 }
 
 .eyewear-eyebrow {
+    margin: 5px 0 0;
+    color: var(--color-taupe);
     font-size: 10px;
     font-weight: 500;
     letter-spacing: 0.16em;
@@ -23,28 +33,47 @@
 }
 
 .eyewear-intro-copy h2 {
+    margin: 0;
+    font-family: var(--font-display);
     font-size: clamp(52px, 6.2vw, 88px);
+    font-weight: 400;
     line-height: 0.94;
+    letter-spacing: -0.04em;
 }
 
 .eyewear-intro-copy > p {
     max-width: 450px;
-    margin-top: 27px;
+    margin: 27px 0 0;
+    color: var(--color-taupe);
     font-size: 13px;
     line-height: 1.85;
-    color: var(--color-taupe);
 }
 
 .eyewear-section .editorial-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    width: fit-content;
     margin-top: 27px;
+    padding-bottom: 7px;
+    border-bottom: 1px solid var(--color-obsidian);
     color: var(--color-obsidian);
-    border-color: var(--color-obsidian);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-decoration: none;
+    text-transform: uppercase;
+    transition: gap 250ms ease;
+}
+
+.eyewear-section .editorial-link:hover {
+    gap: 19px;
 }
 
 .eyewear-grid {
     display: grid;
-    grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
-    align-items: end;
+    grid-template-columns: 1.2fr 0.8fr;
+    align-items: start;
     gap: 22px;
     margin-top: 62px;
 }
@@ -52,63 +81,113 @@
 .eyewear-image {
     position: relative;
     display: block;
+    min-width: 0;
     overflow: hidden;
-    background: var(--color-stone);
+    background: var(--color-ivory);
+    color: var(--color-obsidian);
+    text-decoration: none;
 }
 
 .eyewear-image-large {
-    height: clamp(340px, 43vw, 570px);
+    margin-top: 0;
 }
 
 .eyewear-image-small {
-    height: clamp(280px, 34vw, 440px);
+    margin-top: 90px;
 }
 
 .eyewear-image img {
     display: block;
     width: 100%;
-    height: 100%;
-    object-fit: contain;
-    padding: 24px;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
     transition: transform 700ms cubic-bezier(0.2, 0.65, 0.25, 1);
+}
+
+.eyewear-image-small img {
+    aspect-ratio: 3 / 4;
 }
 
 .eyewear-image:hover img {
     transform: scale(1.035);
 }
 
-.eyewear-image::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(
-        to top,
-        rgba(0, 0, 0, 0.3),
-        transparent 35%
-    );
-    pointer-events: none;
-}
-
 .eyewear-image-label {
-    position: absolute;
-    z-index: 2;
-    right: 20px;
-    bottom: 19px;
-    left: 20px;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
     gap: 12px;
-    color: var(--color-white);
+    padding: 15px 0 0;
+}
+
+.eyewear-image-label span:first-child {
+    font-family: var(--font-display);
+    font-size: 22px;
+    line-height: 1.2;
+}
+
+.eyewear-image-label span:last-child {
+    flex-shrink: 0;
+    color: var(--color-taupe);
+    font-size: 10px;
+    line-height: 1.6;
+}
+
+.eyewear-product-placeholder {
+    display: grid;
+    aspect-ratio: 4 / 5;
+    place-items: center;
+    background: var(--color-ivory);
+    color: var(--color-taupe);
+    font-family: var(--font-display);
+    font-size: 24px;
+    letter-spacing: 0.2em;
+}
+
+.eyewear-coming-soon {
+    display: flex;
+    min-height: 270px;
+    margin-top: 62px;
+    padding: 45px 24px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    border-top: 1px solid rgba(35, 39, 32, 0.18);
+    border-bottom: 1px solid rgba(35, 39, 32, 0.18);
+}
+
+.eyewear-coming-soon > span {
+    color: var(--color-taupe);
     font-size: 9px;
     font-weight: 500;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
+    letter-spacing: 0.18em;
+}
+
+.eyewear-coming-soon h3 {
+    margin: 22px 0 0;
+    font-family: var(--font-display);
+    font-size: clamp(30px, 4vw, 48px);
+    font-weight: 400;
+    line-height: 1.1;
+}
+
+.eyewear-coming-soon p {
+    max-width: 420px;
+    margin: 15px 0 0;
+    color: var(--color-taupe);
+    font-size: 12px;
+    line-height: 1.8;
 }
 
 @media (max-width: 900px) {
     .eyewear-section {
-        padding: 15px 0 85px;
+        padding: 85px 0 95px;
+    }
+
+    .eyewear-section .container {
+        padding-right: 24px;
+        padding-left: 24px;
     }
 
     .eyewear-intro {
@@ -117,13 +196,27 @@
     }
 
     .eyewear-grid {
+        gap: 18px;
+        margin-top: 48px;
+    }
+
+    .eyewear-image-small {
+        margin-top: 55px;
+    }
+
+    .eyewear-coming-soon {
         margin-top: 48px;
     }
 }
 
-@media (max-width: 650px) {
+@media (max-width: 560px) {
     .eyewear-section {
-        padding: 10px 0 70px;
+        padding: 70px 0 75px;
+    }
+
+    .eyewear-section .container {
+        padding-right: 20px;
+        padding-left: 20px;
     }
 
     .eyewear-intro-copy h2 {
@@ -137,19 +230,26 @@
 
     .eyewear-grid {
         grid-template-columns: 1fr;
-        gap: 15px;
+        gap: 30px;
         margin-top: 38px;
     }
 
-    .eyewear-image-large {
-        height: 360px;
-    }
-
     .eyewear-image-small {
-        height: 310px;
+        margin-top: 0;
     }
 
-    .eyewear-image img {
-        padding: 20px;
+    .eyewear-image img,
+    .eyewear-image-small img {
+        aspect-ratio: 4 / 5;
+    }
+
+    .eyewear-image-label span:first-child {
+        font-size: 19px;
+    }
+
+    .eyewear-coming-soon {
+        min-height: 230px;
+        margin-top: 38px;
+        padding: 35px 15px;
     }
 }

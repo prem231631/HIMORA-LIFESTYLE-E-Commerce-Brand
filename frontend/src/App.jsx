@@ -7,7 +7,7 @@ import NewCollection from "./components/layout/NewCollection";
 import EyewearSection from "./components/layout/EyewearSection";
 import FeaturedProducts from "./components/layout/FeaturedProducts";
 
-import ProtectedRoute from "./components/auth/ProtectedRoute";
+import ProtectedRoute from "./pages/auth/ProtectedRoute";
 
 import Search from "./pages/public/Search";
 import Cart from "./pages/public/Cart";

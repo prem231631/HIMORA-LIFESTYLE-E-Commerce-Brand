@@ -1,65 +1,64 @@
 .new-collection {
-    padding: 150px 0 180px;
+    padding: 110px 0 130px;
     background: var(--color-ivory);
 }
 
 .collection-intro {
-    display:contents;
-    grid-template-columns: 1fr 2fr;
-    gap: 90px;
+    display: grid;
+    grid-template-columns: 0.7fr 1.3fr;
+    align-items: start;
+    gap: 48px;
+}
+
+.eyebrow {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
 }
 
 .collection-intro-copy {
-    max-width: 850px;
+    max-width: 760px;
 }
 
 .collection-intro-copy h2 {
-    font-size: clamp(56px, 7vw, 108px);
+    font-size: clamp(52px, 6.2vw, 88px);
+    line-height: 0.94;
 }
 
 .collection-intro-copy > p {
-    max-width: 500px;
-
-    margin-top: 42px;
-
-    font-size: 14px;
-    line-height: 1.8;
+    max-width: 450px;
+    margin-top: 27px;
+    font-size: 13px;
+    line-height: 1.85;
     color: var(--color-taupe);
 }
 
 .editorial-link {
     width: fit-content;
-
     display: inline-flex;
     align-items: center;
-    gap: 14px;
-
-    margin-top: 34px;
+    gap: 12px;
+    margin-top: 27px;
     padding-bottom: 7px;
-
     border-bottom: 1px solid var(--color-obsidian);
-
     font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.14em;
+    font-weight: 500;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
-
-    transition: gap var(--transition-medium);
+    transition: gap 250ms ease;
 }
 
 .editorial-link:hover {
-    gap: 22px;
+    gap: 19px;
 }
-
-/* Image grid */
 
 .collection-grid {
     display: grid;
-    grid-template-columns: minmax(0, 1.45fr) minmax(260px, 0.75fr);
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
     align-items: end;
-    gap: 24px;
-
-    margin-top: 90px;
+    gap: 22px;
+    margin-top: 62px;
 }
 
 .collection-image {
@@ -70,20 +69,19 @@
 }
 
 .collection-image-large {
-    height: 720px;
+    height: clamp(340px, 43vw, 570px);
 }
 
 .collection-image-small {
-    height: 540px;
+    height: clamp(280px, 34vw, 440px);
 }
 
 .collection-image img {
+    display: block;
     width: 100%;
     height: 100%;
-
     object-fit: cover;
-
-    transition: transform 900ms cubic-bezier(0.2, 0.65, 0.25, 1);
+    transition: transform 700ms cubic-bezier(0.2, 0.65, 0.25, 1);
 }
 
 .collection-image:hover img {
@@ -92,101 +90,78 @@
 
 .collection-image::after {
     content: "";
-
     position: absolute;
     inset: 0;
-
     background: linear-gradient(
         to top,
-        rgba(0, 0, 0, 0.38),
-        transparent 30%
+        rgba(0, 0, 0, 0.42),
+        transparent 34%
     );
-
     pointer-events: none;
 }
 
 .collection-image-label {
     position: absolute;
     z-index: 2;
-
-    right: 24px;
-    bottom: 22px;
-    left: 24px;
-
+    right: 20px;
+    bottom: 19px;
+    left: 20px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-
+    gap: 12px;
     color: var(--color-white);
-
     font-size: 9px;
-    font-weight: 600;
-    letter-spacing: 0.14em;
+    font-weight: 500;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
 }
 
-/* Tablet */
-
 @media (max-width: 900px) {
     .new-collection {
-        padding: 110px 0 130px;
+        padding: 85px 0 100px;
     }
 
     .collection-intro {
         grid-template-columns: 1fr;
-        gap: 36px;
+        gap: 25px;
     }
 
     .collection-intro-copy {
-        max-width: 700px;
+        max-width: 680px;
     }
 
     .collection-grid {
-        margin-top: 90px;
-    }
-
-    .collection-image-large {
-        height: 600px;
-    }
-
-    .collection-image-small {
-        height: 450px;
+        margin-top: 48px;
     }
 }
 
-/* Mobile */
-
 @media (max-width: 650px) {
     .new-collection {
-        padding: 90px 0 110px;
-    }
-
-    .collection-intro {
-        gap: 28px;
+        padding: 70px 0 80px;
     }
 
     .collection-intro-copy h2 {
-        font-size: clamp(52px, 15vw, 76px);
+        font-size: clamp(46px, 12vw, 66px);
     }
 
     .collection-intro-copy > p {
-        margin-top: 28px;
-        font-size: 13px;
-        line-height: 1.7;
+        margin-top: 21px;
+        font-size: 12px;
+        line-height: 1.8;
     }
 
     .collection-grid {
         grid-template-columns: 1fr;
-        gap: 16px;
-        margin-top: 70px;
+        gap: 15px;
+        margin-top: 38px;
     }
 
-    .collection-image-large,
-    .collection-image-small {
-        height: 520px;
+    .collection-image-large {
+        height: 390px;
     }
 
     .collection-image-small {
-        height: 420px;
+        height: 310px;
     }
 }

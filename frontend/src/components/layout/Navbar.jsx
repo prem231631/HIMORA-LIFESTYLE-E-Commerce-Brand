@@ -68,8 +68,8 @@ function Navbar() {
             user = null;
         }
 
-        if (user?.role === "admin") {
-            navigate("/admin/orders");
+        if (user?.role === "admin" || user?.is_admin === true) {
+            navigate("/admin/dashboard");
         } else {
             navigate("/account");
         }
@@ -136,7 +136,6 @@ function Navbar() {
         }
     }, []);
 
-    // Refresh authentication and cart state on navigation.
     useEffect(() => {
         refreshAuthState();
         fetchBagCount();
@@ -146,7 +145,6 @@ function Navbar() {
         fetchBagCount,
     ]);
 
-    // Respond to login, logout, and cart changes.
     useEffect(() => {
         const handleAuthUpdated = () => {
             refreshAuthState();
@@ -200,7 +198,9 @@ function Navbar() {
         };
     }, [refreshAuthState, fetchBagCount]);
 
-    const isAdmin = currentUser?.role === "admin";
+    const isAdmin =
+        currentUser?.role === "admin" ||
+        currentUser?.is_admin === true;
 
     const displayName =
         currentUser?.full_name ||
@@ -211,7 +211,6 @@ function Navbar() {
     return (
         <header className="site-header">
             <nav className="navbar container">
-                {/* Mobile Menu Button */}
                 <button
                     className="navbar-mobile-toggle"
                     type="button"
@@ -221,7 +220,6 @@ function Navbar() {
                     <Menu size={20} strokeWidth={1.5} />
                 </button>
 
-                {/* Brand */}
                 <Link
                     to="/"
                     className="navbar-brand"
@@ -230,7 +228,6 @@ function Navbar() {
                     HIMORA
                 </Link>
 
-                {/* Desktop Navigation */}
                 <div className="navbar-links">
                     <Link to="/">New</Link>
                     <Link to="/collections">Collections</Link>
@@ -239,7 +236,6 @@ function Navbar() {
                     <Link to="/accessories">Accessories</Link>
                 </div>
 
-                {/* Actions */}
                 <div className="navbar-actions">
                     <button
                         type="button"
@@ -299,7 +295,9 @@ function Navbar() {
                         className="navbar-bag"
                         aria-label={`Shopping bag, ${bagCount} items`}
                         onClick={() => {
-                            if (localStorage.getItem("access_token")) {
+                            if (
+                                localStorage.getItem("access_token")
+                            ) {
                                 navigate("/cart");
                             } else {
                                 navigate("/login", {
@@ -317,7 +315,6 @@ function Navbar() {
                 </div>
             </nav>
 
-            {/* Mobile Navigation */}
             <div
                 className={`mobile-menu ${
                     mobileMenuOpen ? "mobile-menu-open" : ""
@@ -341,18 +338,28 @@ function Navbar() {
                     <Link to="/" onClick={closeMobileMenu}>
                         New
                     </Link>
+
                     <Link
                         to="/collections"
                         onClick={closeMobileMenu}
                     >
                         Collections
                     </Link>
-                    <Link to="/eyewear" onClick={closeMobileMenu}>
+
+                    <Link
+                        to="/eyewear"
+                        onClick={closeMobileMenu}
+                    >
                         Eyewear
                     </Link>
-                    <Link to="/apparel" onClick={closeMobileMenu}>
+
+                    <Link
+                        to="/apparel"
+                        onClick={closeMobileMenu}
+                    >
                         Apparel
                     </Link>
+
                     <Link
                         to="/accessories"
                         onClick={closeMobileMenu}
@@ -397,7 +404,9 @@ function Navbar() {
                         onClick={() => {
                             closeMobileMenu();
 
-                            if (localStorage.getItem("access_token")) {
+                            if (
+                                localStorage.getItem("access_token")
+                            ) {
                                 navigate("/cart");
                             } else {
                                 navigate("/login", {

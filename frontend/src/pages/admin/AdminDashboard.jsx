@@ -134,7 +134,7 @@ export default function AdminDashboard() {
     const requests = [
       {
         name: "orders",
-        path: "/api/orders/admin",
+        path: "/api/admin/orders",
         keys: ["orders", "items", "results"],
       },
       {

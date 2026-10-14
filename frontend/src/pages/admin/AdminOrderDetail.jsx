@@ -48,6 +48,7 @@ const STATUS_FLOW = {
 
 async function parseResponse(response) {
   const contentType = response.headers.get("content-type") || "";
+
   const data = contentType.includes("application/json")
     ? await response.json()
     : await response.text();
@@ -59,7 +60,9 @@ async function parseResponse(response) {
         : data;
 
     throw new Error(
-      typeof detail === "string" ? detail : "The request could not be completed."
+      typeof detail === "string"
+        ? detail
+        : "The request could not be completed."
     );
   }
 
@@ -120,50 +123,56 @@ function getOrderItems(order) {
 
 function getItemName(item) {
   return (
-    item.product_name ||
-    item.product?.name ||
-    item.variant?.product?.name ||
+    item?.product_name ||
+    item?.product?.name ||
+    item?.variant?.product?.name ||
+    item?.product_variant?.product?.name ||
     "Product"
   );
 }
 
 function getItemSku(item) {
   return (
-    item.sku ||
-    item.product_variant?.sku ||
-    item.variant?.sku ||
+    item?.sku ||
+    item?.product_variant?.sku ||
+    item?.variant?.sku ||
     "—"
   );
 }
 
 function getItemUnitPrice(item) {
   return Number(
-    item.unit_price ??
-      item.price ??
-      item.product_variant?.price ??
-      item.variant?.price ??
+    item?.unit_price ??
+      item?.price ??
+      item?.product_variant?.price ??
+      item?.variant?.price ??
       0
   );
 }
 
 function getItemSubtotal(item) {
   return Number(
-    item.subtotal ??
-      item.total_price ??
-      getItemUnitPrice(item) * Number(item.quantity || 0)
+    item?.subtotal ??
+      item?.total_price ??
+      getItemUnitPrice(item) * Number(item?.quantity || 0)
   );
 }
 
 function getShippingAddress(order) {
-  return (
-    order.shipping_address ||
-    order.address ||
-    order.user_address ||
-    null
-  );
+  if (!order || typeof order !== "object") return null;
+
+  const address =
+    order.shipping_address ??
+    order.address ??
+    order.user_address ??
+    null;
+
+  return address && typeof address === "object" ? address : null;
 }
 
 function getCustomerName(order) {
+  if (!order || typeof order !== "object") return "Customer";
+
   const address = getShippingAddress(order);
 
   return (
@@ -178,6 +187,8 @@ function getCustomerName(order) {
 }
 
 function getCustomerEmail(order) {
+  if (!order || typeof order !== "object") return "";
+
   return (
     order.customer_email ||
     order.shipping_email ||
@@ -187,6 +198,8 @@ function getCustomerEmail(order) {
 }
 
 function getCustomerPhone(order) {
+  if (!order || typeof order !== "object") return "";
+
   const address = getShippingAddress(order);
 
   return (
@@ -199,14 +212,18 @@ function getCustomerPhone(order) {
 }
 
 function getPayment(order) {
-  if (Array.isArray(order?.payments) && order.payments.length > 0) {
+  if (!order || typeof order !== "object") return null;
+
+  if (Array.isArray(order.payments) && order.payments.length > 0) {
     return order.payments[0];
   }
 
-  return order?.payment || null;
+  return order.payment || null;
 }
 
 function getPaymentMethod(order) {
+  if (!order || typeof order !== "object") return "Not specified";
+
   const payment = getPayment(order);
 
   return (
@@ -218,6 +235,8 @@ function getPaymentMethod(order) {
 }
 
 function getPaymentStatus(order) {
+  if (!order || typeof order !== "object") return "PENDING";
+
   const payment = getPayment(order);
 
   return normalizeStatus(
@@ -242,6 +261,7 @@ function getPaymentReference(order) {
 
 function getStatusHistory(order) {
   if (Array.isArray(order?.status_history)) return order.status_history;
+
   if (Array.isArray(order?.order_status_history)) {
     return order.order_status_history;
   }
@@ -279,7 +299,7 @@ function AdminOrderDetail() {
         }
 
         const response = await fetch(
-          `${API_BASE_URL}/api/orders/admin/${encodeURIComponent(orderId)}`,
+          `${API_BASE_URL}/api/admin/orders/${encodeURIComponent(orderId)}`,
           {
             method: "GET",
             headers: {
@@ -290,6 +310,11 @@ function AdminOrderDetail() {
         );
 
         const data = await parseResponse(response);
+
+        if (!data || typeof data !== "object" || Array.isArray(data)) {
+          throw new Error("The server returned invalid order details.");
+        }
+
         setOrder(data);
       } catch (err) {
         setError(err.message || "Failed to load order details.");
@@ -303,8 +328,6 @@ function AdminOrderDetail() {
 
   useEffect(() => {
     fetchOrder();
-
-    return undefined;
   }, [fetchOrder]);
 
   const updateStatus = async (nextStatus) => {
@@ -321,7 +344,9 @@ function AdminOrderDetail() {
     }
 
     if (currentStatus === "CANCELLED" || currentStatus === "DELIVERED") {
-      setError("This order can no longer be updated through the status workflow.");
+      setError(
+        "This order can no longer be updated through the status workflow."
+      );
       return;
     }
 
@@ -336,16 +361,14 @@ function AdminOrderDetail() {
         throw new Error("Your session has expired. Please log in again.");
       }
 
-      const payload = {
-        status: nextStatus,
-      };
+      const payload = { status: nextStatus };
 
       if (statusNote.trim()) {
         payload.note = statusNote.trim();
       }
 
       const response = await fetch(
-        `${API_BASE_URL}/api/orders/admin/${encodeURIComponent(orderId)}/status`,
+        `${API_BASE_URL}/api/admin/orders/${encodeURIComponent(orderId)}/status`,
         {
           method: "PATCH",
           headers: {
@@ -359,7 +382,12 @@ function AdminOrderDetail() {
 
       const data = await parseResponse(response);
 
-      if (data && typeof data === "object" && data.id) {
+      if (
+        data &&
+        typeof data === "object" &&
+        !Array.isArray(data) &&
+        data.id
+      ) {
         setOrder(data);
       } else {
         await fetchOrder({ silent: true });
@@ -419,7 +447,7 @@ function AdminOrderDetail() {
     );
   }
 
-  if (!order && error) {
+  if (!order) {
     return (
       <main className="admin-order-detail-page">
         <button
@@ -434,7 +462,7 @@ function AdminOrderDetail() {
         <section className="admin-order-detail-error">
           <AlertCircle size={24} />
           <h2>Unable to load order</h2>
-          <p>{error}</p>
+          <p>{error || "Order details are unavailable."}</p>
 
           <div className="admin-order-error-actions">
             <button
@@ -458,8 +486,6 @@ function AdminOrderDetail() {
       </main>
     );
   }
-
-  if (!order) return null;
 
   return (
     <main className="admin-order-detail-page">
@@ -526,7 +552,7 @@ function AdminOrderDetail() {
           <span>Items</span>
           <strong>
             {orderItems.reduce(
-              (total, item) => total + Number(item.quantity || 0),
+              (total, item) => total + Number(item?.quantity || 0),
               0
             )}
           </strong>
@@ -548,7 +574,6 @@ function AdminOrderDetail() {
                 <span>ORDER ITEMS</span>
                 <h2>Purchased pieces</h2>
               </div>
-
               <Package size={20} />
             </div>
 
@@ -559,18 +584,19 @@ function AdminOrderDetail() {
             ) : (
               <div className="admin-order-items">
                 {orderItems.map((item, index) => {
-                  const quantity = Number(item.quantity || 0);
+                  const quantity = Number(item?.quantity || 0);
                   const imageUrl =
-                    item.image_url ||
-                    item.product_image ||
-                    item.product?.image_url ||
-                    item.product?.primary_image ||
-                    item.variant?.product?.image_url;
+                    item?.image_url ||
+                    item?.product_image ||
+                    item?.product?.image_url ||
+                    item?.product?.primary_image ||
+                    item?.variant?.product?.image_url ||
+                    item?.product_variant?.product?.image_url;
 
                   return (
                     <div
                       className="admin-order-item"
-                      key={item.id ?? `${item.product_id}-${index}`}
+                      key={item?.id ?? `${item?.product_id}-${index}`}
                     >
                       <div className="admin-order-item-image">
                         {imageUrl ? (
@@ -591,11 +617,11 @@ function AdminOrderDetail() {
                         <h3>{getItemName(item)}</h3>
                         <p>SKU: {getItemSku(item)}</p>
 
-                        {(item.size || item.color) && (
+                        {(item?.size || item?.color) && (
                           <p className="admin-order-item-attributes">
-                            {item.size && `Size: ${item.size}`}
-                            {item.size && item.color && " · "}
-                            {item.color && `Color: ${item.color}`}
+                            {item?.size && `Size: ${item.size}`}
+                            {item?.size && item?.color && " · "}
+                            {item?.color && `Color: ${item.color}`}
                           </p>
                         )}
 
@@ -657,7 +683,6 @@ function AdminOrderDetail() {
                 <span>ORDER TIMELINE</span>
                 <h2>Status history</h2>
               </div>
-
               <Clock size={20} />
             </div>
 
@@ -685,9 +710,7 @@ function AdminOrderDetail() {
 
                       <div className="admin-order-timeline-content">
                         <strong>{formatStatus(entry.status)}</strong>
-                        <p>
-                          {entry.note || "Order status updated."}
-                        </p>
+                        <p>{entry.note || "Order status updated."}</p>
                         <small>{formatDateTime(entry.created_at)}</small>
                       </div>
                     </div>
@@ -704,7 +727,6 @@ function AdminOrderDetail() {
                 <span>FULFILLMENT</span>
                 <h2>Update status</h2>
               </div>
-
               <Truck size={20} />
             </div>
 
@@ -745,10 +767,7 @@ function AdminOrderDetail() {
                     disabled={updatingStatus}
                   >
                     {updatingStatus ? (
-                      <RefreshCw
-                        size={15}
-                        className="admin-order-spin"
-                      />
+                      <RefreshCw size={15} className="admin-order-spin" />
                     ) : (
                       <Check size={15} />
                     )}
@@ -787,7 +806,6 @@ function AdminOrderDetail() {
                 <span>CUSTOMER INFORMATION</span>
                 <h2>Customer details</h2>
               </div>
-
               <UserRound size={20} />
             </div>
 
@@ -817,7 +835,6 @@ function AdminOrderDetail() {
                 <span>DELIVERY</span>
                 <h2>Shipping address</h2>
               </div>
-
               <MapPin size={20} />
             </div>
 
@@ -863,7 +880,6 @@ function AdminOrderDetail() {
                 <span>PAYMENT</span>
                 <h2>Payment details</h2>
               </div>
-
               <CreditCard size={20} />
             </div>
 

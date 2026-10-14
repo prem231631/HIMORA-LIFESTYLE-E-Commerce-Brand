@@ -1,16 +1,91 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import "./FeaturedProducts.css";
 
+const API_BASE_URL =
+    import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+
+function getProductImage(product) {
+    const image =
+        product.images?.find((item) => item.is_primary) ||
+        product.images?.[0];
+
+    if (!image?.image_url) {
+        return null;
+    }
+
+    if (
+        image.image_url.startsWith("http://") ||
+        image.image_url.startsWith("https://")
+    ) {
+        return image.image_url;
+    }
+
+    return `${API_BASE_URL.replace(/\/$/, "")}/${image.image_url.replace(
+        /^\//,
+        ""
+    )}`;
+}
+
 function FeaturedProducts() {
+    const [products, setProducts] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(false);
+
+    useEffect(() => {
+        const controller = new AbortController();
+
+        async function fetchFeaturedProducts() {
+            try {
+                setLoading(true);
+                setError(false);
+
+                const response = await fetch(
+                    `${API_BASE_URL}/api/products/featured`,
+                    {
+                        headers: {
+                            Accept: "application/json",
+                        },
+                        signal: controller.signal,
+                    }
+                );
+
+                if (!response.ok) {
+                    throw new Error("Unable to load featured products.");
+                }
+
+                const data = await response.json();
+
+                setProducts(Array.isArray(data) ? data : []);
+            } catch (err) {
+                if (err.name !== "AbortError") {
+                    console.error(
+                        "Featured products loading error:",
+                        err
+                    );
+
+                    setError(true);
+                }
+            } finally {
+                if (!controller.signal.aborted) {
+                    setLoading(false);
+                }
+            }
+        }
+
+        fetchFeaturedProducts();
+
+        return () => controller.abort();
+    }, []);
+
     return (
         <section className="featured-products">
             <div className="container">
-
                 <div className="featured-products-header">
                     <div>
                         <p className="featured-products-eyebrow">
-                            03 — Featured Pieces
+                            03 — Featured Collection
                         </p>
 
                         <h2 className="display-text">
@@ -29,52 +104,104 @@ function FeaturedProducts() {
                     </Link>
                 </div>
 
-                <div className="featured-products-grid">
-
-                    <Link
-                        to="/products/himora-horizon"
-                        className="featured-product-card"
+                {loading ? (
+                    <div
+                        className="featured-products-message"
+                        role="status"
                     >
-                        <div className="featured-product-image">
-                            <img
-                                src="https://images.unsplash.com/photo-1511499767150-a48a237f0083?auto=format&fit=crop&w=1200&q=85"
-                                alt="HIMORA Horizon eyewear"
-                            />
-                        </div>
+                        <span className="featured-products-message-label">
+                            HIMORA / COLLECTION
+                        </span>
 
-                        <div className="featured-product-info">
-                            <div>
-                                <span>HIMORA / E-01</span>
-                                <h3>Horizon</h3>
-                            </div>
+                        <h3>Discovering the collection</h3>
 
-                            <span>NPR 18,500</span>
-                        </div>
-                    </Link>
-
-                    <Link
-                        to="/products/himora-horizon"
-                        className="featured-product-card"
+                        <p>
+                            Please wait while we bring the collection
+                            together.
+                        </p>
+                    </div>
+                ) : error ? (
+                    <div
+                        className="featured-products-message"
+                        role="alert"
                     >
-                        <div className="featured-product-image">
-                            <img
-                                src="https://images.unsplash.com/photo-1577803645773-f96470509666?auto=format&fit=crop&w=1200&q=85"
-                                alt="HIMORA eyewear"
-                            />
-                        </div>
+                        <span className="featured-products-message-label">
+                            HIMORA / COLLECTION
+                        </span>
 
-                        <div className="featured-product-info">
-                            <div>
-                                <span>HIMORA / E-02</span>
-                                <h3>Altitude</h3>
-                            </div>
+                        <h3>Collection temporarily unavailable</h3>
 
-                            <span>NPR 18,500</span>
-                        </div>
-                    </Link>
+                        <p>
+                            We couldn’t load the featured collection.
+                            Please try again shortly.
+                        </p>
+                    </div>
+                ) : products.length === 0 ? (
+                    <div className="featured-products-message">
+                        <span className="featured-products-message-label">
+                            HIMORA / COMING SOON
+                        </span>
 
-                </div>
+                        <h3>Something exceptional is on its way.</h3>
 
+                        <p>
+                            Our featured collection is being carefully
+                            curated. Discover it here soon.
+                        </p>
+                    </div>
+                ) : (
+                    <div className="featured-products-grid">
+                        {products.map((product) => {
+                            const imageUrl = getProductImage(product);
+
+                            return (
+                                <Link
+                                    key={product.id}
+                                    to={`/products/${product.slug}`}
+                                    className="featured-product-card"
+                                >
+                                    <div className="featured-product-image">
+                                        {imageUrl ? (
+                                            <img
+                                                src={imageUrl}
+                                                alt={
+                                                    product.images?.find(
+                                                        (image) =>
+                                                            image.is_primary
+                                                    )?.alt_text ||
+                                                    product.name
+                                                }
+                                                loading="lazy"
+                                            />
+                                        ) : (
+                                            <div className="featured-product-placeholder">
+                                                HIMORA
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="featured-product-info">
+                                        <div>
+                                            <span>
+                                                {product.category?.name ||
+                                                    "HIMORA"}
+                                            </span>
+
+                                            <h3>{product.name}</h3>
+                                        </div>
+
+                                        <span>
+                                            NPR{" "}
+                                            {Number(
+                                                product.price
+                                            ).toLocaleString("en-NP")}
+                                        </span>
+                                    </div>
+                                </Link>
+                            );
+                        })}
+                    </div>
+                )}
             </div>
         </section>
     );

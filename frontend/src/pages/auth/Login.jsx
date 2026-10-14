@@ -1,7 +1,7 @@
-
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import "./Login.css";
+
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
@@ -43,16 +43,19 @@ function Login() {
     setLoading(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: form.email.trim().toLowerCase(),
-          password: form.password,
-        }),
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/api/auth/login`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: form.email.trim().toLowerCase(),
+            password: form.password,
+          }),
+        }
+      );
 
       const data = await response.json();
 
@@ -74,43 +77,58 @@ function Login() {
       }
 
       if (!data.access_token) {
-        throw new Error("Login succeeded without an access token.");
+        throw new Error(
+          "Login succeeded without an access token."
+        );
       }
+
+      const user = data.user;
+
+      if (!user) {
+        throw new Error(
+          "Login response is missing user information. Please check the backend login response."
+        );
+      }
+
+      const isAdmin =
+        user.role === "admin" || user.is_admin === true;
 
       localStorage.setItem("access_token", data.access_token);
+      localStorage.setItem("user", JSON.stringify(user));
+      localStorage.setItem(
+        "userName",
+        user.full_name || user.name || ""
+      );
+      localStorage.setItem("isAdmin", String(isAdmin));
 
-      if (data.user) {
-        localStorage.setItem("user", JSON.stringify(data.user));
-        localStorage.setItem(
-          "userName",
-          data.user.full_name || ""
-        );
-        localStorage.setItem(
-          "isAdmin",
-          data.user.role === "admin" ? "true" : "false"
-        );
-      }
+      window.dispatchEvent(
+        new Event("himora-auth-updated")
+      );
 
-      // Notify components that authentication may have changed.
-      window.dispatchEvent(new Event("himora-auth-updated"));
-
-      // Admins always go to the admin orders dashboard.
-      if (data.user?.role === "admin") {
-        navigate("/admin/orders", { replace: true });
+      // Admins always open the Admin Dashboard after login.
+      if (isAdmin) {
+        navigate("/admin/dashboard", {
+          replace: true,
+        });
         return;
       }
 
-      // Return customers to the page they originally requested.
+      // Customers can return to a protected page they requested.
       const requestedDestination = location.state?.from;
 
-      const destination =
+      const isValidDestination =
         typeof requestedDestination === "string" &&
         requestedDestination.startsWith("/") &&
-        !requestedDestination.startsWith("//")
-          ? requestedDestination
-          : "/";
+        !requestedDestination.startsWith("//") &&
+        !requestedDestination.startsWith("/admin");
 
-      navigate(destination, { replace: true });
+      const destination = isValidDestination
+        ? requestedDestination
+        : "/account";
+
+      navigate(destination, {
+        replace: true,
+      });
     } catch (err) {
       setError(err.message || "Unable to sign in.");
     } finally {

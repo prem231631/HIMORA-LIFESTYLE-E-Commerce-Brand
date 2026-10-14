@@ -1306,6 +1306,24 @@ def admin_update_order_status(
 
     new_status = payload.status.strip().upper()
 
+    # FIX: Validate against all supported statuses,
+    # including CANCELLED.
+    allowed_statuses = {
+        "PENDING",
+        "CONFIRMED",
+        "PROCESSING",
+        "SHIPPED",
+        "OUT_FOR_DELIVERY",
+        "DELIVERED",
+        "CANCELLED",
+    }
+
+    if new_status not in allowed_statuses:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid order status: {new_status}.",
+        )
+
     valid_transitions = {
         "PENDING": {"CONFIRMED", "CANCELLED"},
         "CONFIRMED": {"PROCESSING", "CANCELLED"},
@@ -1313,12 +1331,6 @@ def admin_update_order_status(
         "SHIPPED": {"OUT_FOR_DELIVERY"},
         "OUT_FOR_DELIVERY": {"DELIVERED"},
     }
-
-    if new_status not in valid_transitions:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid order status.",
-        )
 
     if new_status not in valid_transitions.get(order.status, set()):
         raise HTTPException(
@@ -1344,10 +1356,20 @@ def admin_update_order_status(
                     if inventory.reserved_quantity < item.quantity:
                         raise HTTPException(
                             status_code=status.HTTP_409_CONFLICT,
-                            detail="Insufficient reserved inventory to cancel this order.",
+                            detail=(
+                                "Insufficient reserved inventory "
+                                "to cancel this order."
+                            ),
                         )
 
                     inventory.reserved_quantity -= item.quantity
+
+            if order.payment_method == "CASH_ON_DELIVERY":
+                order.payment_status = "PENDING"
+
+                if order.payment:
+                    order.payment.payment_status = "PENDING"
+                    order.payment.paid_at = None
 
         if new_status == "DELIVERED":
             for item in order.items:
@@ -1362,7 +1384,10 @@ def admin_update_order_status(
                 if not inventory:
                     raise HTTPException(
                         status_code=status.HTTP_409_CONFLICT,
-                        detail="Inventory record is missing for an ordered variant.",
+                        detail=(
+                            "Inventory record is missing for "
+                            "an ordered variant."
+                        ),
                     )
 
                 if (
@@ -1392,7 +1417,7 @@ def admin_update_order_status(
                 status=new_status,
                 note=(
                     payload.note.strip()
-                    if payload.note
+                    if payload.note and payload.note.strip()
                     else f"Order status changed to {new_status} by admin."
                 ),
             )

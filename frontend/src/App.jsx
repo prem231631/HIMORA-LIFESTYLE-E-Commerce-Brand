@@ -1,3 +1,4 @@
+
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 
 import Navbar from "./components/layout/Navbar";
@@ -5,6 +6,8 @@ import Hero from "./components/layout/Hero";
 import NewCollection from "./components/layout/NewCollection";
 import EyewearSection from "./components/layout/EyewearSection";
 import FeaturedProducts from "./components/layout/FeaturedProducts";
+
+import ProtectedRoute from "./components/auth/ProtectedRoute";
 
 import Search from "./pages/public/Search";
 import Cart from "./pages/public/Cart";
@@ -19,212 +22,230 @@ import Addresses from "./pages/public/Addresses";
 import Orders from "./pages/public/Orders";
 import OrderDetails from "./pages/public/OrderDetails";
 import Account from "./pages/public/Account";
-import AdminProducts from "./pages/admin/AdminProducts";
-
-import AdminOrders from "./pages/admin/AdminOrders";
-import AdminOrderDetails from "./pages/admin/AdminOrderDetail";
 
 import Register from "./pages/auth/Register";
 import Login from "./pages/auth/Login";
 
-function HomePage() {
-    return (
-        <>
-            <Navbar />
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminProducts from "./pages/admin/AdminProducts";
+import AdminCategories from "./pages/admin/AdminCategories";
+import AdminInventory from "./pages/admin/AdminInventory";
+import AdminOrders from "./pages/admin/AdminOrders";
+import AdminOrderDetail from "./pages/admin/AdminOrderDetail";
+import AdminUsers from "./pages/admin/AdminUsers";
 
-            <main>
-                <Hero />
-                <NewCollection />
-                <EyewearSection />
-                <FeaturedProducts />
-            </main>
-        </>
-    );
+function HomePage() {
+  return (
+    <>
+      <Navbar />
+      <main>
+        <Hero />
+        <NewCollection />
+        <EyewearSection />
+        <FeaturedProducts />
+      </main>
+    </>
+  );
+}
+
+function PublicLayout({ children }) {
+  return (
+    <>
+      <Navbar />
+      {children}
+    </>
+  );
 }
 
 function App() {
-    return (
-        <BrowserRouter>
-            <Routes>
-                {/* HOME */}
-                <Route
-                    path="/"
-                    element={<HomePage />}
-                />
+  return (
+    <BrowserRouter>
+      <Routes>
+        {/* PUBLIC STOREFRONT */}
+        <Route path="/" element={<HomePage />} />
 
-                {/* SEARCH */}
-                <Route
-                    path="/search"
-                    element={
-                        <>
-                            <Navbar />
-                            <Search />
-                        </>
-                    }
-                />
+        <Route
+          path="/search"
+          element={
+            <PublicLayout>
+              <Search />
+            </PublicLayout>
+          }
+        />
 
-                {/* CART */}
-                <Route
-                    path="/cart"
-                    element={
-                        <>
-                            <Navbar />
-                            <Cart />
-                        </>
-                    }
-                />
+        <Route
+          path="/collections"
+          element={
+            <PublicLayout>
+              <Collections />
+            </PublicLayout>
+          }
+        />
 
-                {/* CHECKOUT */}
-                <Route
-                    path="/checkout"
-                    element={
-                        <>
-                            <Navbar />
-                            <Checkout />
-                        </>
-                    }
-                />
+        <Route
+          path="/eyewear"
+          element={
+            <PublicLayout>
+              <Eyewear />
+            </PublicLayout>
+          }
+        />
 
-                {/* DELIVERY ADDRESSES */}
-                <Route
-                    path="account/addresses"
-                    element={
-                        <>
-                            <Navbar />
-                            <Addresses />
-                        </>
-                    }
-                />
+        <Route
+          path="/apparel"
+          element={
+            <PublicLayout>
+              <Apparel />
+            </PublicLayout>
+          }
+        />
 
-                {/* CUSTOMER ORDER HISTORY */}
-                <Route
-                    path="account/orders"
-                    element={
-                        <>
-                            <Navbar />
-                            <Orders />
-                        </>
-                    }
-                />
+        <Route
+          path="/accessories"
+          element={
+            <PublicLayout>
+              <Accessories />
+            </PublicLayout>
+          }
+        />
 
-                {/* INDIVIDUAL ORDER DETAILS */}
-                <Route
-                    path="account/orders/:orderId"
-                    element={
-                        <>
-                            <Navbar />
-                            <OrderDetails />
-                        </>
-                    }
-                />
+        <Route
+          path="/products"
+          element={
+            <PublicLayout>
+              <Products />
+            </PublicLayout>
+          }
+        />
 
-                {/* ACCOUNT */}
-                <Route
-                    path="/account"
-                    element={
-                        <>
-                            <Navbar />
-                            <Account />
-                        </>
-                    }
-                />
+        <Route
+          path="/products/:productId"
+          element={
+            <PublicLayout>
+              <ProductDetails />
+            </PublicLayout>
+          }
+        />
 
+        {/* AUTHENTICATION */}
+        <Route path="/register" element={<Register />} />
+        <Route path="/login" element={<Login />} />
 
-                {/* COLLECTIONS */}
-                <Route
-                    path="/collections"
-                    element={
-                        <>
-                            <Navbar />
-                            <Collections />
-                        </>
-                    }
-                />
+        {/* CUSTOMER ROUTES — LOGIN REQUIRED */}
+        <Route element={<ProtectedRoute />}>
+          <Route
+            path="/cart"
+            element={
+              <PublicLayout>
+                <Cart />
+              </PublicLayout>
+            }
+          />
 
-                {/* EYEWEAR */}
-                <Route
-                    path="/eyewear"
-                    element={
-                        <>
-                            <Navbar />
-                            <Eyewear />
-                        </>
-                    }
-                />
+          <Route
+            path="/checkout"
+            element={
+              <PublicLayout>
+                <Checkout />
+              </PublicLayout>
+            }
+          />
 
-                {/* APPAREL */}
-                <Route
-                    path="/apparel"
-                    element={
-                        <>
-                            <Navbar />
-                            <Apparel />
-                        </>
-                    }
-                />
+          <Route
+            path="/account"
+            element={
+              <PublicLayout>
+                <Account />
+              </PublicLayout>
+            }
+          />
 
-                {/* ACCESSORIES */}
-                <Route
-                    path="/accessories"
-                    element={
-                        <>
-                            <Navbar />
-                            <Accessories />
-                        </>
-                    }
-                />
+          <Route
+            path="/account/addresses"
+            element={
+              <PublicLayout>
+                <Addresses />
+              </PublicLayout>
+            }
+          />
 
-                {/* PRODUCT DETAILS */}
-                <Route
-                    path="/products/:productId"
-                    element={
-                        <>
-                            <Navbar />
-                            <ProductDetails />
-                        </>
-                    }
-                />
+          <Route
+            path="/account/orders"
+            element={
+              <PublicLayout>
+                <Orders />
+              </PublicLayout>
+            }
+          />
 
-                {/* PRODUCTS */}
-                <Route
-                    path="/products"
-                    element={
-                        <>
-                            <Navbar />
-                            <Products />
-                        </>
-                    }
-                />
+          <Route
+            path="/account/orders/:orderId"
+            element={
+              <PublicLayout>
+                <OrderDetails />
+              </PublicLayout>
+            }
+          />
+        </Route>
 
-                {/* AUTHENTICATION */}
-                <Route
-                    path="/register"
-                    element={<Register />}
-                />
+        {/* ADMIN ROUTES — ADMIN ROLE REQUIRED */}
+        <Route element={<ProtectedRoute requireAdmin />}>
+          <Route
+            path="/admin"
+            element={<AdminDashboard />}
+          />
 
-                <Route
-                    path="/login"
-                    element={<Login />}
-                />
+          <Route
+            path="/admin/dashboard"
+            element={<AdminDashboard />}
+          />
 
-                {/* ADMIN */}
-                <Route
-                    path="/admin/orders"
-                    element={<AdminOrders />}
-                />
+          <Route
+            path="/admin/orders"
+            element={<AdminOrders />}
+          />
 
-                <Route
-                    path="/admin/orders/:orderId"
-                    element={<AdminOrderDetails />}
-                />
+          <Route
+            path="/admin/orders/:orderId"
+            element={<AdminOrderDetail />}
+          />
 
-                <Route
-                    path="/admin/products"
-                    element={<AdminProducts />}
-                />
-            </Routes>
-        </BrowserRouter>
-    );
+          <Route
+            path="/admin/products"
+            element={<AdminProducts />}
+          />
+
+          <Route
+            path="/admin/categories"
+            element={<AdminCategories />}
+          />
+
+          <Route
+            path="/admin/inventory"
+            element={<AdminInventory />}
+          />
+
+          <Route
+            path="/admin/users"
+            element={<AdminUsers />}
+          />
+        </Route>
+
+        {/* FALLBACK */}
+        <Route
+          path="*"
+          element={
+            <PublicLayout>
+              <main className="himora-not-found">
+                <h1>Page not found</h1>
+                <p>The page you're looking for doesn't exist.</p>
+              </main>
+            </PublicLayout>
+          }
+        />
+      </Routes>
+    </BrowserRouter>
+  );
 }
 
 export default App;

@@ -15,7 +15,7 @@ class Settings(BaseSettings):
 
     # eSewa ePay v2
     esewa_product_code: str = "EPAYTEST"
-    esewa_secret_key: str = ""
+    esewa_secret_key: str = "8gBm/:&EnhH.1/q"
     esewa_payment_url: str = (
         "https://rc-epay.esewa.com.np/api/epay/main/v2/form"
     )

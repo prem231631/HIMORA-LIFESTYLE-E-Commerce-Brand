@@ -1,9 +1,11 @@
+
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { CheckCircle2, LoaderCircle, ShieldCheck } from "lucide-react";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+const API_BASE_URL = (
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"
+).replace(/\/+$/, "");
 
 function getAuthToken() {
   return (
@@ -30,6 +32,28 @@ function decodeEsewaData(encodedData) {
   }
 }
 
+async function readResponse(response) {
+  const text = await response.text();
+
+  let data;
+  try {
+    data = text ? JSON.parse(text) : {};
+  } catch {
+    data = { detail: text };
+  }
+
+  if (!response.ok) {
+    const detail =
+      typeof data.detail === "string"
+        ? data.detail
+        : `Payment verification failed (HTTP ${response.status}).`;
+
+    throw new Error(detail);
+  }
+
+  return data;
+}
+
 function EsewaSuccess() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -42,15 +66,18 @@ function EsewaSuccess() {
 
   useEffect(() => {
     let cancelled = false;
+    let timeoutId;
 
     async function verifyPayment() {
+      console.info("[eSewa] Success page loaded.");
+
       const token = getAuthToken();
 
       if (!token) {
-        navigate("/login", {
-          replace: true,
-          state: { from: "/payment/esewa/success" },
-        });
+        setStatus("error");
+        setMessage(
+          "Your login session could not be found. Sign in and check your order history before attempting another payment."
+        );
         return;
       }
 
@@ -59,6 +86,14 @@ function EsewaSuccess() {
         ? decodeEsewaData(encodedData)
         : null;
 
+      if (encodedData && !callbackData) {
+        setStatus("error");
+        setMessage(
+          "We couldn't read eSewa's payment response. Please check your order history before trying again."
+        );
+        return;
+      }
+
       const transactionUuid =
         callbackData?.transaction_uuid ||
         searchParams.get("transaction_uuid");
@@ -66,35 +101,50 @@ function EsewaSuccess() {
       if (!transactionUuid) {
         setStatus("error");
         setMessage(
-          "We couldn't find the transaction reference. Please check your order history before trying again."
+          "The transaction reference is missing. Please check your order history before attempting another payment."
         );
         return;
       }
 
-      try {
-        const response = await fetch(
-          `${API_BASE_URL}/api/payments/esewa/verify`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({
-              transaction_uuid: transactionUuid,
-            }),
-          }
+      // These checks help detect callback problems. The backend remains
+      // responsible for confirming payment with eSewa.
+      if (
+        callbackData &&
+        (callbackData.product_code !== "EPAYTEST" ||
+          callbackData.status !== "COMPLETE")
+      ) {
+        setStatus("pending");
+        setMessage(
+          "eSewa has not returned a completed test transaction. Check your order history before trying again."
         );
+        return;
+      }
 
-        const data = await response.json();
+      const controller = new AbortController();
 
-        if (!response.ok) {
-          throw new Error(
-            typeof data?.detail === "string"
-              ? data.detail
-              : "We couldn't verify your payment yet."
-          );
-        }
+      timeoutId = setTimeout(() => controller.abort(), 20000);
+
+      try {
+        const url = `${API_BASE_URL}/api/payments/esewa/verify`;
+
+        console.info("[eSewa] Calling backend verification:", url);
+        console.info("[eSewa] Transaction reference:", transactionUuid);
+
+        const response = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            transaction_uuid: transactionUuid,
+          }),
+          signal: controller.signal,
+        });
+
+        const data = await readResponse(response);
+
+        console.info("[eSewa] Backend verification response:", data);
 
         if (cancelled) return;
 
@@ -106,21 +156,33 @@ function EsewaSuccess() {
           setStatus("success");
           setMessage("Your payment has been verified successfully.");
           setOrderId(data.order_id || data.order?.id || null);
+
           window.dispatchEvent(new Event("himora-cart-updated"));
         } else {
           setStatus("pending");
           setMessage(
-            "Your transaction has not been confirmed as paid. Please check your order history before making another payment."
+            "The backend has not confirmed this payment as paid. Check your order history before making another payment."
           );
         }
       } catch (error) {
         if (cancelled) return;
 
+        console.error("[eSewa] Verification error:", error);
+
         setStatus("error");
-        setMessage(
-          error.message ||
-            "Payment verification failed. Please check your order history."
-        );
+
+        if (error.name === "AbortError") {
+          setMessage(
+            "Verification timed out because the backend did not respond within 20 seconds. Your payment status is not yet confirmed. Check your order history before trying again."
+          );
+        } else {
+          setMessage(
+            error.message ||
+              "We couldn't verify your payment. Please check your order history."
+          );
+        }
+      } finally {
+        clearTimeout(timeoutId);
       }
     }
 
@@ -128,6 +190,7 @@ function EsewaSuccess() {
 
     return () => {
       cancelled = true;
+      clearTimeout(timeoutId);
     };
   }, [navigate, searchParams]);
 
@@ -171,7 +234,10 @@ function EsewaSuccess() {
           <LoaderCircle
             size={48}
             strokeWidth={1.5}
-            style={{ margin: "0 auto 24px", animation: "spin 1s linear infinite" }}
+            style={{
+              margin: "0 auto 24px",
+              animation: "spin 1s linear infinite",
+            }}
           />
         ) : isSuccess ? (
           <CheckCircle2
@@ -187,7 +253,13 @@ function EsewaSuccess() {
           />
         )}
 
-        <h1 style={{ fontSize: "27px", fontWeight: 400, marginBottom: "16px" }}>
+        <h1
+          style={{
+            fontSize: "27px",
+            fontWeight: 400,
+            marginBottom: "16px",
+          }}
+        >
           {isVerifying
             ? "Verifying Payment"
             : isSuccess

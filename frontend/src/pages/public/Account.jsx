@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -12,6 +13,10 @@ import {
     X,
     Check,
     Phone,
+    LockKeyhole,
+    Eye,
+    EyeOff,
+    ShieldCheck,
 } from "lucide-react";
 
 import "./Account.css";
@@ -57,6 +62,22 @@ function Account() {
     const [savingProfile, setSavingProfile] = useState(false);
     const [profileError, setProfileError] = useState("");
     const [profileSuccess, setProfileSuccess] = useState("");
+
+    // Change password state
+    const [showPasswordForm, setShowPasswordForm] = useState(false);
+    const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+    const [showNewPassword, setShowNewPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+    const [passwordForm, setPasswordForm] = useState({
+        current_password: "",
+        new_password: "",
+        confirm_password: "",
+    });
+
+    const [savingPassword, setSavingPassword] = useState(false);
+    const [passwordError, setPasswordError] = useState("");
+    const [passwordSuccess, setPasswordSuccess] = useState("");
 
     useEffect(() => {
         let cancelled = false;
@@ -129,7 +150,6 @@ function Account() {
                     phone: profile.phone || "",
                 });
 
-                // Keep the locally stored user information synchronized.
                 localStorage.setItem("user", JSON.stringify(profile));
                 localStorage.setItem(
                     "userName",
@@ -167,7 +187,6 @@ function Account() {
         "HIMORA Customer";
 
     const customerEmail = user?.email || "";
-    const customerPhone = user?.phone || "";
 
     const recentOrders = [...orders]
         .sort(
@@ -323,6 +342,141 @@ function Account() {
         }
     }
 
+    function handlePasswordChange(event) {
+        const { name, value } = event.target;
+
+        setPasswordForm((previous) => ({
+            ...previous,
+            [name]: value,
+        }));
+
+        setPasswordError("");
+        setPasswordSuccess("");
+    }
+
+    function handleCancelPasswordChange() {
+        setShowPasswordForm(false);
+        setPasswordForm({
+            current_password: "",
+            new_password: "",
+            confirm_password: "",
+        });
+        setPasswordError("");
+        setShowCurrentPassword(false);
+        setShowNewPassword(false);
+        setShowConfirmPassword(false);
+    }
+
+    async function handlePasswordSubmit(event) {
+        event.preventDefault();
+
+        const token = localStorage.getItem("access_token");
+
+        if (!token) {
+            navigate("/login", {
+                replace: true,
+                state: { from: "/account" },
+            });
+            return;
+        }
+
+        if (passwordForm.new_password.length < 8) {
+            setPasswordError(
+                "Your new password must contain at least 8 characters."
+            );
+            return;
+        }
+
+        if (
+            passwordForm.new_password !==
+            passwordForm.confirm_password
+        ) {
+            setPasswordError("Your new passwords do not match.");
+            return;
+        }
+
+        if (
+            passwordForm.current_password ===
+            passwordForm.new_password
+        ) {
+            setPasswordError(
+                "Your new password must be different from your current password."
+            );
+            return;
+        }
+
+        setSavingPassword(true);
+        setPasswordError("");
+        setPasswordSuccess("");
+
+        try {
+            const response = await fetch(
+                `${API_BASE_URL}/api/auth/change-password`,
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        current_password:
+                            passwordForm.current_password,
+                        new_password: passwordForm.new_password,
+                    }),
+                }
+            );
+
+            const data = await response.json().catch(() => ({}));
+
+            if (response.status === 401) {
+                localStorage.removeItem("access_token");
+                localStorage.removeItem("user");
+                localStorage.removeItem("userName");
+                localStorage.removeItem("isAdmin");
+
+                window.dispatchEvent(
+                    new Event("himora-auth-updated")
+                );
+
+                navigate("/login", {
+                    replace: true,
+                    state: { from: "/account" },
+                });
+
+                return;
+            }
+
+            if (!response.ok) {
+                throw new Error(
+                    typeof data.detail === "string"
+                        ? data.detail
+                        : "Unable to change your password. Please try again."
+                );
+            }
+
+            setPasswordForm({
+                current_password: "",
+                new_password: "",
+                confirm_password: "",
+            });
+
+            setShowPasswordForm(false);
+            setShowCurrentPassword(false);
+            setShowNewPassword(false);
+            setShowConfirmPassword(false);
+            setPasswordSuccess(
+                "Your password has been changed successfully."
+            );
+        } catch (err) {
+            setPasswordError(
+                err.message ||
+                    "Something went wrong. Please try again."
+            );
+        } finally {
+            setSavingPassword(false);
+        }
+    }
+
     return (
         <main className="account-page">
             <section className="account-hero">
@@ -446,6 +600,38 @@ function Account() {
                             </button>
                         )}
                     </div>
+
+                    <div className="account-shortcut account-shortcut-static">
+                        <div className="account-shortcut-icon">
+                            <LockKeyhole
+                                size={22}
+                                strokeWidth={1.3}
+                            />
+                        </div>
+
+                        <div className="account-personal-info">
+                            <h3>Password &amp; Security</h3>
+                            <p>
+                                Keep your account secure by updating
+                                your password.
+                            </p>
+                        </div>
+
+                        {!showPasswordForm && (
+                            <button
+                                type="button"
+                                className="account-edit-profile-button"
+                                onClick={() => {
+                                    setPasswordError("");
+                                    setPasswordSuccess("");
+                                    setShowPasswordForm(true);
+                                }}
+                            >
+                                <ShieldCheck size={16} />
+                                Change Password
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 {profileSuccess && (
@@ -560,6 +746,217 @@ function Account() {
                                         <>
                                             <Check size={17} />
                                             Save Changes
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </form>
+                    </section>
+                )}
+
+                {passwordSuccess && (
+                    <div className="account-profile-message account-profile-success">
+                        <Check size={18} />
+                        <span>{passwordSuccess}</span>
+                    </div>
+                )}
+
+                {showPasswordForm && (
+                    <section className="account-profile-editor account-password-editor">
+                        <div className="account-profile-editor-heading">
+                            <div>
+                                <p className="account-eyebrow">
+                                    PASSWORD &amp; SECURITY
+                                </p>
+                                <h3>Change your password</h3>
+                                <p className="account-password-description">
+                                    Choose a strong password to help protect
+                                    your HIMORA account.
+                                </p>
+                            </div>
+
+                            <button
+                                type="button"
+                                className="account-profile-close"
+                                onClick={handleCancelPasswordChange}
+                                disabled={savingPassword}
+                                aria-label="Cancel password change"
+                            >
+                                <X size={19} />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handlePasswordSubmit}>
+                            <div className="account-password-fields">
+                                <label className="account-profile-field">
+                                    <span>Current password</span>
+                                    <div className="account-password-input">
+                                        <LockKeyhole size={17} />
+                                        <input
+                                            type={
+                                                showCurrentPassword
+                                                    ? "text"
+                                                    : "password"
+                                            }
+                                            name="current_password"
+                                            value={
+                                                passwordForm.current_password
+                                            }
+                                            onChange={handlePasswordChange}
+                                            autoComplete="current-password"
+                                            placeholder="Enter current password"
+                                            required
+                                            disabled={savingPassword}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setShowCurrentPassword(
+                                                    (previous) => !previous
+                                                )
+                                            }
+                                            aria-label={
+                                                showCurrentPassword
+                                                    ? "Hide current password"
+                                                    : "Show current password"
+                                            }
+                                            disabled={savingPassword}
+                                        >
+                                            {showCurrentPassword ? (
+                                                <EyeOff size={17} />
+                                            ) : (
+                                                <Eye size={17} />
+                                            )}
+                                        </button>
+                                    </div>
+                                </label>
+
+                                <label className="account-profile-field">
+                                    <span>New password</span>
+                                    <div className="account-password-input">
+                                        <LockKeyhole size={17} />
+                                        <input
+                                            type={
+                                                showNewPassword
+                                                    ? "text"
+                                                    : "password"
+                                            }
+                                            name="new_password"
+                                            value={passwordForm.new_password}
+                                            onChange={handlePasswordChange}
+                                            autoComplete="new-password"
+                                            placeholder="Enter new password"
+                                            minLength={8}
+                                            maxLength={128}
+                                            required
+                                            disabled={savingPassword}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setShowNewPassword(
+                                                    (previous) => !previous
+                                                )
+                                            }
+                                            aria-label={
+                                                showNewPassword
+                                                    ? "Hide new password"
+                                                    : "Show new password"
+                                            }
+                                            disabled={savingPassword}
+                                        >
+                                            {showNewPassword ? (
+                                                <EyeOff size={17} />
+                                            ) : (
+                                                <Eye size={17} />
+                                            )}
+                                        </button>
+                                    </div>
+                                    <small>
+                                        Use at least 8 characters.
+                                    </small>
+                                </label>
+
+                                <label className="account-profile-field">
+                                    <span>Confirm new password</span>
+                                    <div className="account-password-input">
+                                        <LockKeyhole size={17} />
+                                        <input
+                                            type={
+                                                showConfirmPassword
+                                                    ? "text"
+                                                    : "password"
+                                            }
+                                            name="confirm_password"
+                                            value={
+                                                passwordForm.confirm_password
+                                            }
+                                            onChange={handlePasswordChange}
+                                            autoComplete="new-password"
+                                            placeholder="Re-enter new password"
+                                            minLength={8}
+                                            maxLength={128}
+                                            required
+                                            disabled={savingPassword}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setShowConfirmPassword(
+                                                    (previous) => !previous
+                                                )
+                                            }
+                                            aria-label={
+                                                showConfirmPassword
+                                                    ? "Hide confirmation password"
+                                                    : "Show confirmation password"
+                                            }
+                                            disabled={savingPassword}
+                                        >
+                                            {showConfirmPassword ? (
+                                                <EyeOff size={17} />
+                                            ) : (
+                                                <Eye size={17} />
+                                            )}
+                                        </button>
+                                    </div>
+                                </label>
+                            </div>
+
+                            {passwordError && (
+                                <div className="account-profile-message account-profile-error">
+                                    <AlertCircle size={18} />
+                                    <span>{passwordError}</span>
+                                </div>
+                            )}
+
+                            <div className="account-profile-form-actions">
+                                <button
+                                    type="button"
+                                    className="account-profile-cancel-button"
+                                    onClick={handleCancelPasswordChange}
+                                    disabled={savingPassword}
+                                >
+                                    Cancel
+                                </button>
+
+                                <button
+                                    type="submit"
+                                    className="account-profile-save-button"
+                                    disabled={savingPassword}
+                                >
+                                    {savingPassword ? (
+                                        <>
+                                            <LoaderCircle
+                                                size={17}
+                                                className="account-spinner"
+                                            />
+                                            Updating...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <ShieldCheck size={17} />
+                                            Update Password
                                         </>
                                     )}
                                 </button>

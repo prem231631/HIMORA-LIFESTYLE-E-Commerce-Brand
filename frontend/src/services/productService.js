@@ -1,42 +1,65 @@
-const API_BASE_URL =
-    import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+const API_BASE_URL = (
+    import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"
+).replace(/\/+$/, "");
 
 async function handleResponse(response, errorMessage) {
+    let data = null;
+
+    try {
+        data = await response.json();
+    } catch {
+        // The server may return an empty or non-JSON response.
+    }
+
     if (!response.ok) {
+        const detail = data?.detail;
         let message = errorMessage;
 
-        try {
-            const data = await response.json();
+        if (typeof detail === "string" && detail.trim()) {
+            message = detail;
+        } else if (Array.isArray(detail)) {
+            const details = detail
+                .map((item) => item?.msg)
+                .filter(Boolean);
 
-            if (typeof data.detail === "string") {
-                message = data.detail;
-            } else if (Array.isArray(data.detail)) {
-                message = data.detail
-                    .map((item) => item.msg)
-                    .filter(Boolean)
-                    .join(", ");
+            if (details.length > 0) {
+                message = details.join(", ");
             }
-        } catch {
-            // Keep the default error message if the response is not JSON.
         }
 
         throw new Error(message);
     }
 
-    return response.json();
+    return data;
 }
 
-export async function getFeaturedProducts() {
-    const response = await fetch(
-        `${API_BASE_URL}/api/products/featured`
-    );
+async function fetchApi(url, errorMessage, options = {}) {
+    let response;
 
-    return handleResponse(
-        response,
+    try {
+        response = await fetch(url, options);
+    } catch {
+        throw new Error(
+            "Unable to connect to the server. Please check that the backend is running."
+        );
+    }
+
+    return handleResponse(response, errorMessage);
+}
+
+/**
+ * Fetch products marked as featured by the backend.
+ */
+export async function getFeaturedProducts() {
+    return fetchApi(
+        `${API_BASE_URL}/api/products/featured`,
         "Failed to load featured products."
     );
 }
 
+/**
+ * Fetch one product using its slug or ID.
+ */
 export async function getProduct(productSlugOrId) {
     if (
         productSlugOrId === undefined ||
@@ -46,18 +69,19 @@ export async function getProduct(productSlugOrId) {
         throw new Error("A product identifier is required.");
     }
 
-    const response = await fetch(
-        `${API_BASE_URL}/api/products/${encodeURIComponent(
-            productSlugOrId
-        )}`
+    const identifier = encodeURIComponent(
+        String(productSlugOrId).trim()
     );
 
-    return handleResponse(
-        response,
+    return fetchApi(
+        `${API_BASE_URL}/api/products/${identifier}`,
         "Failed to load product."
     );
 }
 
+/**
+ * Fetch variants and their inventory for a product.
+ */
 export async function getProductVariants(productId) {
     if (
         productId === undefined ||
@@ -67,14 +91,10 @@ export async function getProductVariants(productId) {
         throw new Error("A product ID is required to load variants.");
     }
 
-    const response = await fetch(
-        `${API_BASE_URL}/api/products/${encodeURIComponent(
-            productId
-        )}/variants`
-    );
+    const identifier = encodeURIComponent(String(productId).trim());
 
-    return handleResponse(
-        response,
+    return fetchApi(
+        `${API_BASE_URL}/api/products/${identifier}/variants`,
         "Failed to load product variants."
     );
 }

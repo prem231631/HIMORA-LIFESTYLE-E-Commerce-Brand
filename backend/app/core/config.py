@@ -13,6 +13,16 @@ class Settings(BaseSettings):
 
     database_url: str
 
+
+    # Password reset email
+    smtp_host: str = "smtp.gmail.com"
+    smtp_port: int = 587
+    smtp_username: str = ""
+    smtp_password: str = ""
+    smtp_from_email: str = ""
+    frontend_url: str = "http://localhost:5173"
+
+
     # eSewa ePay v2
     esewa_product_code: str = "EPAYTEST"
     esewa_secret_key: str = "8gBm/:&EnhH.1/q"

@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, CheckCircle2, LoaderCircle, Mail } from "lucide-react";
-import "./Login.css";
+import "./forgotPassword.css";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import "./Login.css";
@@ -24,6 +25,8 @@ function Login() {
       ...previous,
       [name]: value,
     }));
+
+    setError("");
   };
 
   const handleSubmit = async (event) => {
@@ -57,7 +60,7 @@ function Login() {
         }
       );
 
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
         if (Array.isArray(data.detail)) {
@@ -105,7 +108,6 @@ function Login() {
         new Event("himora-auth-updated")
       );
 
-      // Admins always open the Admin Dashboard after login.
       if (isAdmin) {
         navigate("/admin/dashboard", {
           replace: true,
@@ -113,7 +115,6 @@ function Login() {
         return;
       }
 
-      // Customers can return to a protected page they requested.
       const requestedDestination = location.state?.from;
 
       const isValidDestination =
@@ -200,6 +201,16 @@ function Login() {
                 autoComplete="current-password"
                 required
               />
+
+              <div className="himora-forgot-password-row">
+                <Link
+                  to="/forgot-password"
+                  className="himora-forgot-password-link"
+                  state={{ email: form.email.trim().toLowerCase() }}
+                >
+                  Forgot password?
+                </Link>
+              </div>
             </div>
 
             {error && (

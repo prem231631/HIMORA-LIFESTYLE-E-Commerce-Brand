@@ -9,7 +9,7 @@ import {
   CheckCircle2,
   ShieldCheck,
 } from "lucide-react";
-import "./Login.css";
+import "./resetPassword.css";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";

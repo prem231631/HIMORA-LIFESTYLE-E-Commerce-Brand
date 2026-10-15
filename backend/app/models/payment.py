@@ -28,6 +28,14 @@ class Payment(Base):
         index=True,
     )
 
+    #Esewa specific fields
+    transaction_uuid: Mapped[str | None] = mapped_column(
+        String(100),
+        unique=True,
+        nullable=True,
+        index=True,
+    )
+
     payment_method: Mapped[str] = mapped_column(
         String(30),
         nullable=False,
@@ -67,3 +75,7 @@ class Payment(Base):
         "Order",
         back_populates="payment",
     )
+
+    
+
+

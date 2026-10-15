@@ -8,7 +8,7 @@ from app.models import Cart, User
 from app.schemas import LoginRequest, LoginResponse, RegisterRequest, UpdateProfileRequest, UserResponse
 
 from app.core.security import get_current_user
-
+from app.schemas import ChangePasswordRequest
 router = APIRouter(
     prefix="/api/auth",
     tags=["Authentication"],
@@ -145,3 +145,37 @@ def update_me(
     db.refresh(current_user)
 
     return current_user
+
+
+
+
+@router.post("/change-password")
+def change_password(
+    password_data: ChangePasswordRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if not verify_password(
+        password_data.current_password,
+        current_user.password_hash,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Current password is incorrect.",
+        )
+
+    if password_data.current_password == password_data.new_password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="New password must be different from the current password.",
+        )
+
+    current_user.password_hash = hash_password(
+        password_data.new_password
+    )
+
+    db.commit()
+
+    return {
+        "message": "Password changed successfully."
+    }

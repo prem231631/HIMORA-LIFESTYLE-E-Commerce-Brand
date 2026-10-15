@@ -207,7 +207,7 @@ def checkout(
             user_id=current_user.id,
             order_number=generate_order_number(),
             status="PENDING",
-            payment_method=payload.payment_method,
+            payment_method=checkout_data.payment_method,
             payment_status="PENDING",
             subtotal=subtotal,
             shipping_fee=shipping_fee,
@@ -258,7 +258,7 @@ def checkout(
         db.add(
             Payment(
                 order_id=order.id,
-                payment_method=payload.payment_method,
+                payment_method=checkout_data.payment_method,
                 payment_status="PENDING",
                 amount=total_amount,
             )

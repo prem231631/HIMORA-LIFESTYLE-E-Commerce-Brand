@@ -8,7 +8,53 @@ from app.models import Cart, User
 from app.schemas import LoginRequest, LoginResponse, RegisterRequest, UpdateProfileRequest, UserResponse
 
 from app.core.security import get_current_user
-from app.schemas import ChangePasswordRequest
+
+#SMTP Email
+import smtplib
+from email.message import EmailMessage
+import jwt
+from fastapi import BackgroundTasks
+from app.core.config import settings
+from app.core.security import(
+    create_password_reset_token,
+    decode_password_reset_token,
+)
+from app.schemas import(
+    ForgotPasswordRequest,
+    ResetPasswordRequest,
+)
+
+#Email Helper
+def send_password_reset_email(email: str, token: str) -> None:
+    message = EmailMessage()
+    message["Subject"] = "Reset your HIMORA LIFESTYLE password"
+    message["From"] = settings.smtp_from_email
+    message["To"] = email
+
+    reset_url = (
+        f"{settings.frontend_url.rstrip('/')}"
+        f"/reset-password?token={token}"
+    )
+
+    message.set_content(
+        "We received a request to reset your HIMORA LIFESTYLE password.\n\n"
+        f"Open this link to choose a new password:\n{reset_url}\n\n"
+        "This link expires in 15 minutes. If you did not request "
+        "a reset, you can ignore this email."
+    )
+
+    with smtplib.SMTP(
+        settings.smtp_host,
+        settings.smtp_port,
+        timeout=15,
+    ) as server:
+        server.starttls()
+        server.login(
+            settings.smtp_username,
+            settings.smtp_password,
+        )
+        server.send_message(message)
+
 router = APIRouter(
     prefix="/api/auth",
     tags=["Authentication"],

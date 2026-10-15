@@ -18,7 +18,10 @@ function getImageUrl(imageUrl) {
         return imageUrl;
     }
 
-    return `${API_BASE_URL.replace(/\/$/, "")}/${imageUrl.replace(/^\//, "")}`;
+    return `${API_BASE_URL.replace(/\/$/, "")}/${imageUrl.replace(
+        /^\/+/,
+        ""
+    )}`;
 }
 
 function ProductDetails() {
@@ -44,23 +47,33 @@ function ProductDetails() {
             try {
                 setLoading(true);
                 setError("");
+                setMessage("");
 
                 const productData = await getProduct(productIdentifier);
+
+                if (!productData) {
+                    throw new Error("Product not found.");
+                }
+
                 const variantData = await getProductVariants(productData.id);
 
                 if (cancelled) return;
 
-                setProduct(productData);
-                setVariants(variantData);
+                const safeVariants = Array.isArray(variantData)
+                    ? variantData
+                    : [];
 
-                const availableVariant = variantData.find(
+                setProduct(productData);
+                setVariants(safeVariants);
+
+                const availableVariant = safeVariants.find(
                     (variant) =>
                         variant.is_active &&
                         (variant.inventory?.available_quantity ?? 0) > 0
                 );
 
                 setSelectedVariant(
-                    availableVariant || variantData[0] || null
+                    availableVariant || safeVariants[0] || null
                 );
             } catch (err) {
                 if (!cancelled) {
@@ -86,33 +99,47 @@ function ProductDetails() {
     }, [productIdentifier]);
 
     async function handleAddToBag() {
+        if (!product) return;
+
         const token = localStorage.getItem("access_token");
 
         if (!token) {
             navigate("/login", {
-                state: { from: `/products/${product.slug || product.id}` },
+                state: {
+                    from: `/products/${product.slug || product.id}`,
+                },
             });
             return;
         }
 
-        if (!selectedVariant || addingToBag) return;
+        if (
+            !selectedVariant ||
+            !selectedVariant.is_active ||
+            (selectedVariant.inventory?.available_quantity ?? 0) <= 0 ||
+            addingToBag
+        ) {
+            return;
+        }
 
         setAddingToBag(true);
         setMessage("");
         setMessageType("");
 
         try {
-            const response = await fetch(`${API_BASE_URL}/api/cart/items`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({
-                    variant_id: selectedVariant.id,
-                    quantity: 1,
-                }),
-            });
+            const response = await fetch(
+                `${API_BASE_URL}/api/cart/items`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({
+                        variant_id: selectedVariant.id,
+                        quantity: 1,
+                    }),
+                }
+            );
 
             const data = await response.json().catch(() => null);
 
@@ -147,9 +174,13 @@ function ProductDetails() {
             setMessageType("success");
 
             const updatedVariants = await getProductVariants(product.id);
-            setVariants(updatedVariants);
+            const safeUpdatedVariants = Array.isArray(updatedVariants)
+                ? updatedVariants
+                : [];
 
-            const updatedSelectedVariant = updatedVariants.find(
+            setVariants(safeUpdatedVariants);
+
+            const updatedSelectedVariant = safeUpdatedVariants.find(
                 (variant) => variant.id === selectedVariant.id
             );
 
@@ -178,6 +209,7 @@ function ProductDetails() {
         return (
             <main className="product-details-state">
                 <p>{error || "Product not found."}</p>
+
                 <Link to="/" className="editorial-link">
                     Return home <span>→</span>
                 </Link>
@@ -193,6 +225,12 @@ function ProductDetails() {
 
     const availableQuantity =
         selectedVariant?.inventory?.available_quantity ?? 0;
+
+    const canAddToBag =
+        Boolean(selectedVariant) &&
+        Boolean(selectedVariant.is_active) &&
+        availableQuantity > 0 &&
+        !addingToBag;
 
     return (
         <main className="product-details-page">
@@ -236,7 +274,8 @@ function ProductDetails() {
                         <h1 className="display-text">{product.name}</h1>
 
                         <p className="product-details-price">
-                            NPR {Number(product.price).toLocaleString("en-NP")}
+                            NPR{" "}
+                            {Number(product.price).toLocaleString("en-NP")}
                         </p>
 
                         {product.description && (
@@ -261,9 +300,13 @@ function ProductDetails() {
                                         const isSelected =
                                             selectedVariant?.id === variant.id;
 
-                                        const available =
+                                        const quantity =
                                             variant.inventory
                                                 ?.available_quantity ?? 0;
+
+                                        const isAvailable =
+                                            Boolean(variant.is_active) &&
+                                            quantity > 0;
 
                                         return (
                                             <button
@@ -277,11 +320,10 @@ function ProductDetails() {
                                                 onClick={() => {
                                                     setSelectedVariant(variant);
                                                     setMessage("");
+                                                    setMessageType("");
                                                 }}
-                                                disabled={
-                                                    !variant.is_active ||
-                                                    available <= 0
-                                                }
+                                                disabled={!isAvailable}
+                                                aria-pressed={isSelected}
                                             >
                                                 <span>
                                                     {variant.color || "Standard"}
@@ -300,7 +342,9 @@ function ProductDetails() {
                         <div className="product-details-stock">
                             {selectedVariant ? (
                                 availableQuantity > 0 ? (
-                                    <span>{availableQuantity} available</span>
+                                    <span>
+                                        {availableQuantity} available
+                                    </span>
                                 ) : (
                                     <span>Currently unavailable</span>
                                 )
@@ -313,16 +357,16 @@ function ProductDetails() {
                             type="button"
                             className="product-details-add"
                             onClick={handleAddToBag}
-                            disabled={
-                                !selectedVariant ||
-                                !selectedVariant.is_active ||
-                                availableQuantity <= 0 ||
-                                addingToBag
-                            }
+                            disabled={!canAddToBag}
                         >
                             <span>
-                                {addingToBag ? "Adding..." : "Add to bag"}
+                                {addingToBag
+                                    ? "Adding..."
+                                    : availableQuantity <= 0
+                                      ? "Out of stock"
+                                      : "Add to bag"}
                             </span>
+
                             <span>{addingToBag ? "…" : "→"}</span>
                         </button>
 
@@ -337,6 +381,7 @@ function ProductDetails() {
                                 }`}
                             >
                                 {message}
+
                                 {messageType === "success" && (
                                     <>
                                         {" "}

@@ -1,3 +1,4 @@
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -11,6 +12,24 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 300
 
     database_url: str
+
+    # eSewa ePay v2
+    esewa_product_code: str = "EPAYTEST"
+    esewa_secret_key: str = ""
+    esewa_payment_url: str = (
+        "https://rc-epay.esewa.com.np/api/epay/main/v2/form"
+    )
+    esewa_status_url: str = (
+        "https://rc.esewa.com.np/api/epay/transaction/status/"
+    )
+
+    # These URLs must match the routes implemented in the app.
+    esewa_success_url: str = (
+        "http://localhost:5173/payment/esewa/success"
+    )
+    esewa_failure_url: str = (
+        "http://localhost:5173/payment/esewa/failure"
+    )
 
     model_config = SettingsConfigDict(
         env_file=".env",

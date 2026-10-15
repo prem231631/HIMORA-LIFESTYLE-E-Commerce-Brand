@@ -614,6 +614,116 @@
     color: #8a342b;
 }
 
+/* Password & Security */
+
+.account-password-description {
+    margin-top: 8px;
+    color: var(--text-secondary, #777);
+    font-size: 13px;
+    line-height: 1.7;
+}
+
+.account-password-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 22px;
+    margin-top: 26px;
+}
+
+.account-password-fields .account-profile-field:last-child {
+    grid-column: 1 / -1;
+}
+
+.account-password-input {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    width: 100%;
+    min-width: 0;
+    margin-top: 9px;
+    padding: 0 13px;
+    border: 1px solid var(--border-color, #dedbd5);
+    background: var(--input-background, #fff);
+    color: var(--text-primary, #24221f);
+    transition: border-color 0.2s ease;
+}
+
+.account-password-input:focus-within {
+    border-color: var(--accent-color, #9b8054);
+}
+
+.account-password-input > svg {
+    flex-shrink: 0;
+    color: var(--text-secondary, #858078);
+}
+
+.account-password-input input {
+    flex: 1;
+    min-width: 0;
+    width: 100%;
+    padding: 14px 0;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: 14px;
+}
+
+.account-password-input input:focus {
+    outline: none;
+}
+
+.account-password-input input:disabled {
+    cursor: not-allowed;
+    opacity: 0.65;
+}
+
+.account-password-input button {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    padding: 5px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary, #777);
+    cursor: pointer;
+}
+
+.account-password-input button:hover {
+    color: var(--accent-color, #9b8054);
+}
+
+.account-password-input button:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.account-password-editor .account-profile-form-actions {
+    margin-top: 26px;
+}
+
+@media (max-width: 640px) {
+    .account-password-fields {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 18px;
+    }
+
+    .account-password-fields .account-profile-field:last-child {
+        grid-column: auto;
+    }
+
+    .account-password-editor .account-profile-editor-heading {
+        gap: 12px;
+    }
+
+    .account-password-editor .account-profile-editor-heading h3 {
+        font-size: 18px;
+    }
+}
+
+
 @media (max-width: 640px) {
     .account-profile-editor {
         padding: 21px 17px;

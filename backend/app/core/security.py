@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta, timezone
-
+import secrets
 import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -121,3 +121,41 @@ def require_admin(
         )
 
     return current_user
+
+# =========================================================
+# PASSWORD RESET TOKENS
+# =========================================================
+
+def create_password_reset_token(user: User) -> str:
+    expire = datetime.now(timezone.utc) + timedelta(minutes=15)
+
+    payload = {
+        "sub": str(user.id),
+        "purpose": "password_reset",
+        "password_hash": user.password_hash,
+        "nonce": secrets.token_urlsafe(16),
+        "exp": expire,
+    }
+
+    return jwt.encode(
+        payload,
+        settings.jwt_secret_key,
+        algorithm=settings.jwt_algorithm,
+    )
+
+
+def decode_password_reset_token(token: str) -> int:
+    payload = jwt.decode(
+        token,
+        settings.jwt_secret_key,
+        algorithms=[settings.jwt_algorithm],
+    )
+
+    if payload.get("purpose") != "password_reset":
+        raise ValueError("Invalid password reset token.")
+
+    user_id = payload.get("sub")
+    if user_id is None:
+        raise ValueError("Invalid password reset token.")
+
+    return int(user_id)

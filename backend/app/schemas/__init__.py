@@ -1,3 +1,4 @@
+
 from app.schemas.address import (
     AddressCreate,
     AddressResponse,
@@ -5,6 +6,7 @@ from app.schemas.address import (
 )
 
 from app.schemas.auth import (
+    ChangePasswordRequest,
     LoginRequest,
     LoginResponse,
     RegisterRequest,
@@ -65,6 +67,7 @@ __all__ = [
     "AddressCreate",
     "AddressResponse",
     "AddressUpdate",
+    "ChangePasswordRequest",
     "LoginRequest",
     "LoginResponse",
     "RegisterRequest",

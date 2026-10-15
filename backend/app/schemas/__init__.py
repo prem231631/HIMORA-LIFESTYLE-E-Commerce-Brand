@@ -7,6 +7,8 @@ from app.schemas.address import (
 
 from app.schemas.auth import (
     ChangePasswordRequest,
+    ForgotPasswordRequest,
+    ResetPasswordRequest,
     LoginRequest,
     LoginResponse,
     RegisterRequest,

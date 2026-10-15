@@ -5,8 +5,16 @@ from sqlalchemy.orm import Session
 from app.core.security import create_access_token, hash_password, verify_password
 from app.database.session import get_db
 from app.models import Cart, User
-from app.schemas import LoginRequest, LoginResponse, RegisterRequest, UpdateProfileRequest, UserResponse
-
+from app.schemas import (
+    ChangePasswordRequest,
+    ForgotPasswordRequest,
+    LoginRequest,
+    LoginResponse,
+    RegisterRequest,
+    ResetPasswordRequest,
+    UpdateProfileRequest,
+    UserResponse,
+)
 from app.core.security import get_current_user
 
 #SMTP Email

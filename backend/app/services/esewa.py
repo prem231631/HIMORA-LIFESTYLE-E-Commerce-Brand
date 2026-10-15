@@ -14,7 +14,7 @@ SIGNED_FIELD_NAMES = "total_amount,transaction_uuid,product_code"
 
 
 def format_amount(value: Decimal | int | float | str) -> str:
-    """Format an amount to two decimal places without float arithmetic."""
+    """Format an amount to two decimal places."""
     amount = Decimal(str(value)).quantize(
         Decimal("0.01"),
         rounding=ROUND_HALF_UP,
@@ -31,7 +31,7 @@ def generate_esewa_signature(
 
     if not secret:
         raise ValueError(
-            "ESEWA_SECRET_KEY is not configured in the backend environment."
+            "ESEWA_SECRET_KEY is not configured."
         )
 
     message = (
@@ -55,7 +55,7 @@ def build_esewa_payment_fields(
     success_url: str | None = None,
     failure_url: str | None = None,
 ) -> dict[str, str]:
-    """Build the form fields submitted to the eSewa payment page."""
+    """Build the form fields submitted to eSewa."""
     amount = format_amount(total_amount)
 
     if not transaction_uuid or not all(
@@ -89,11 +89,19 @@ async def verify_esewa_transaction(
     expected_amount: Decimal | int | float | str,
 ) -> dict[str, Any]:
     """
-    Query eSewa's server-side status endpoint.
+    Verify a transaction using eSewa's server-side status endpoint.
 
-    The caller must update the order to PAID only when the returned
-    status is COMPLETE and all transaction details match.
+    A successful HTTP response alone does not mean payment is complete.
+    The caller must validate the returned transaction details.
     """
+    if not settings.esewa_status_url:
+        raise ValueError(
+            "ESEWA_STATUS_URL is not configured."
+        )
+
+    if not transaction_uuid:
+        raise ValueError("Transaction UUID is required.")
+
     amount = format_amount(expected_amount)
 
     params = {
@@ -102,7 +110,17 @@ async def verify_esewa_transaction(
         "transaction_uuid": transaction_uuid,
     }
 
-    async with httpx.AsyncClient(timeout=15.0) as client:
+    timeout = httpx.Timeout(
+        connect=5.0,
+        read=10.0,
+        write=5.0,
+        pool=5.0,
+    )
+
+    async with httpx.AsyncClient(
+        timeout=timeout,
+        follow_redirects=False,
+    ) as client:
         response = await client.get(
             settings.esewa_status_url,
             params=params,
@@ -115,21 +133,16 @@ async def verify_esewa_transaction(
 
     returned_uuid = result.get("transaction_uuid")
     if returned_uuid is None:
-        # Some legacy response formats use a different identifier.
         returned_uuid = result.get("pid")
+
+    if str(returned_uuid or "") != transaction_uuid:
+        raise ValueError(
+            "eSewa transaction reference is missing or does not match."
+        )
 
     returned_product_code = (
         result.get("product_code") or result.get("scd")
     )
-
-    returned_amount = (
-        result.get("total_amount")
-        if result.get("total_amount") is not None
-        else result.get("totalAmount")
-    )
-
-    if returned_uuid is not None and str(returned_uuid) != transaction_uuid:
-        raise ValueError("eSewa transaction reference does not match.")
 
     if (
         returned_product_code is not None
@@ -137,13 +150,25 @@ async def verify_esewa_transaction(
     ):
         raise ValueError("eSewa product code does not match.")
 
-    if returned_amount is not None:
-        if Decimal(str(returned_amount)).quantize(
+    returned_amount = result.get("total_amount")
+    if returned_amount is None:
+        returned_amount = result.get("totalAmount")
+
+    if returned_amount is None:
+        raise ValueError("eSewa did not return a transaction amount.")
+
+    try:
+        actual_amount = Decimal(str(returned_amount)).quantize(
             Decimal("0.01"),
             rounding=ROUND_HALF_UP,
-        ) != Decimal(amount):
-            raise ValueError("eSewa transaction amount does not match.")
-    elif str(result.get("status", "")).upper() == "COMPLETE":
-        raise ValueError("eSewa did not return a verifiable amount.")
+        )
+        expected = Decimal(amount)
+    except (ValueError, TypeError, ArithmeticError) as exc:
+        raise ValueError(
+            "eSewa returned an invalid transaction amount."
+        ) from exc
+
+    if not actual_amount.is_finite() or actual_amount != expected:
+        raise ValueError("eSewa transaction amount does not match.")
 
     return result

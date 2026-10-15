@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-
+import httpx
 from app.core.config import settings
 from app.core.security import get_current_user
 from app.database.session import get_db

@@ -254,3 +254,35 @@ def forgot_password(
         )
 
     return {"message": generic_message}
+
+
+@router.post("/reset-password")
+def reset_password(
+    request: ResetPasswordRequest,
+    db: Session = Depends(get_db),
+):
+    try:
+        payload = decode_password_reset_token(request.token)
+        user_id = int(payload["sub"])
+    except (jwt.InvalidTokenError, ValueError, TypeError, KeyError):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired password reset link.",
+        )
+
+    user = db.get(User, user_id)
+
+    if (
+        user is None
+        or not user.is_active
+        or user.password_hash != payload["password_hash"]
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired password reset link.",
+        )
+
+    user.password_hash = hash_password(request.new_password)
+    db.commit()
+
+    return {"message": "Password reset successfully."}

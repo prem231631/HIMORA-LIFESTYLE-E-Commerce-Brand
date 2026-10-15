@@ -17,6 +17,8 @@ from app.routers.product_images import router as product_images_router
 from app.routers.product_variant import router as product_variants_router
 from app.routers.products import router as products_router
 
+#Esewa
+from app.routers.payments import router as payments_router
 
 app = FastAPI(
     title=settings.app_name,
@@ -70,7 +72,7 @@ app.include_router(cart_router)
 app.include_router(addresses_router)
 app.include_router(orders_router)
 
-
+app.include_router(payments_router)
 # =========================================================
 # ROOT
 # =========================================================

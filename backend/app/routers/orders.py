@@ -532,6 +532,7 @@ def get_admin_order(
 # ADMIN — UPDATE ORDER STATUS
 # =========================================================
 
+
 @router.patch(
     "/admin/{order_id}/status",
     response_model=AdminOrderResponse,
@@ -576,9 +577,7 @@ def update_order_status(
     if order.status in {"CANCELLED", "DELIVERED"}:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=(
-                f"A {order.status.lower()} order cannot be updated."
-            ),
+            detail=f"A {order.status.lower()} order cannot be updated.",
         )
 
     valid_transitions = {
@@ -599,6 +598,81 @@ def update_order_status(
         )
 
     try:
+        payment_method = (
+            str(order.payment_method).strip().upper()
+            if order.payment_method is not None
+            else ""
+        )
+
+        payment = order.payment
+
+        # Never cancel an order that has already been paid.
+        # A separate refund workflow is required.
+        if new_status == "CANCELLED":
+            if (
+                str(order.payment_status).strip().upper() == "PAID"
+                or (
+                    payment
+                    and str(payment.payment_status).strip().upper()
+                    == "PAID"
+                )
+            ):
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail=(
+                        "This order has already been paid. "
+                        "Process a refund before cancelling it."
+                    ),
+                )
+
+        # Validate payment BEFORE changing inventory or delivery status.
+        if new_status == "DELIVERED":
+            order_payment_status = (
+                str(order.payment_status).strip().upper()
+                if order.payment_status is not None
+                else ""
+            )
+
+            recorded_payment_status = (
+                str(payment.payment_status).strip().upper()
+                if payment and payment.payment_status is not None
+                else ""
+            )
+
+            if payment_method == "ESEWA":
+                if (
+                    order_payment_status != "PAID"
+                    or payment is None
+                    or recorded_payment_status != "PAID"
+                    or payment.paid_at is None
+                ):
+                    raise HTTPException(
+                        status_code=status.HTTP_409_CONFLICT,
+                        detail=(
+                            "This eSewa order cannot be delivered until "
+                            "its payment has been verified and recorded "
+                            "as PAID."
+                        ),
+                    )
+
+            elif payment_method == "CASH_ON_DELIVERY":
+                # COD is collected at delivery, so mark it paid here.
+                order.payment_status = "PAID"
+
+                if payment:
+                    payment.payment_status = "PAID"
+                    payment.paid_at = datetime.now(timezone.utc)
+
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail=(
+                        "Unsupported payment method. "
+                        "The order cannot be marked as delivered."
+                    ),
+                )
+
+        # Release reserved inventory when an unpaid order is cancelled.
         if new_status == "CANCELLED":
             for order_item in order.items:
                 inventory = db.scalar(
@@ -615,13 +689,14 @@ def update_order_status(
                         0,
                     )
 
-            if order.payment_method == "CASH_ON_DELIVERY":
+            if payment_method == "CASH_ON_DELIVERY":
                 order.payment_status = "PENDING"
 
-                if order.payment:
-                    order.payment.payment_status = "PENDING"
-                    order.payment.paid_at = None
+                if payment:
+                    payment.payment_status = "PENDING"
+                    payment.paid_at = None
 
+        # Finalize inventory only after delivery payment checks pass.
         if new_status == "DELIVERED":
             for order_item in order.items:
                 inventory = db.scalar(
@@ -664,12 +739,6 @@ def update_order_status(
                 inventory.stock_quantity -= quantity
                 inventory.reserved_quantity -= quantity
                 inventory.sold_quantity += quantity
-
-            order.payment_status = "PAID"
-
-            if order.payment:
-                order.payment.payment_status = "PAID"
-                order.payment.paid_at = datetime.now(timezone.utc)
 
         order.status = new_status
 
@@ -717,6 +786,3 @@ def update_order_status(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Unable to update order status.",
         ) from exc
-
-
-

@@ -71,3 +71,18 @@ class UpdateProfileRequest(BaseModel):
         min_length=7,
         max_length=30,
     )
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str = Field(
+        min_length=1,
+        max_length=2048,
+    )
+
+    new_password: str = Field(
+        min_length=8,
+        max_length=128,
+    )

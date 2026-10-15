@@ -225,3 +225,32 @@ def change_password(
     return {
         "message": "Password changed successfully."
     }
+
+
+@router.post("/forgot-password")
+def forgot_password(
+    request: ForgotPasswordRequest,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+):
+    generic_message = (
+        "If an account exists for that email, "
+        "a password reset link will be sent."
+    )
+
+    user = db.scalar(
+        select(User).where(
+            User.email == request.email.lower()
+        )
+    )
+
+    if user and user.is_active:
+        token = create_password_reset_token(user)
+
+        background_tasks.add_task(
+            send_password_reset_email,
+            user.email,
+            token,
+        )
+
+    return {"message": generic_message}

@@ -144,7 +144,7 @@ def create_password_reset_token(user: User) -> str:
     )
 
 
-def decode_password_reset_token(token: str) -> int:
+def decode_password_reset_token(token: str) -> dict:
     payload = jwt.decode(
         token,
         settings.jwt_secret_key,
@@ -154,8 +154,7 @@ def decode_password_reset_token(token: str) -> int:
     if payload.get("purpose") != "password_reset":
         raise ValueError("Invalid password reset token.")
 
-    user_id = payload.get("sub")
-    if user_id is None:
+    if not payload.get("sub") or not payload.get("password_hash"):
         raise ValueError("Invalid password reset token.")
 
-    return int(user_id)
+    return payload

@@ -1,11 +1,90 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import "./Products.css";
 
+const API_BASE_URL = (
+    import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"
+).replace(/\/+$/, "");
+
+function getProductImage(product) {
+    const images = Array.isArray(product.images)
+        ? [...product.images].sort(
+              (a, b) =>
+                  Number(b.is_primary) - Number(a.is_primary) ||
+                  (a.sort_order ?? 0) - (b.sort_order ?? 0)
+          )
+        : [];
+
+    const imageUrl = images[0]?.image_url;
+
+    if (!imageUrl) return null;
+
+    if (/^https?:\/\//i.test(imageUrl)) {
+        return imageUrl;
+    }
+
+    return `${API_BASE_URL}/${imageUrl.replace(/^\/+/, "")}`;
+}
+
 function Products() {
+    const [products, setProducts] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
+
+    useEffect(() => {
+        const controller = new AbortController();
+
+        async function loadProducts() {
+            try {
+                setLoading(true);
+                setError("");
+
+                const response = await fetch(
+                    `${API_BASE_URL}/api/products`,
+                    { signal: controller.signal }
+                );
+
+                if (!response.ok) {
+                    throw new Error("Unable to load the collection.");
+                }
+
+                const data = await response.json();
+
+                const productList = Array.isArray(data)
+                    ? data
+                    : Array.isArray(data.items)
+                      ? data.items
+                      : Array.isArray(data.products)
+                        ? data.products
+                        : [];
+
+                setProducts(
+                    productList.filter(
+                        (product) => product.is_active !== false
+                    )
+                );
+            } catch (err) {
+                if (err.name !== "AbortError") {
+                    setError(
+                        err.message ||
+                            "Something went wrong while loading products."
+                    );
+                }
+            } finally {
+                if (!controller.signal.aborted) {
+                    setLoading(false);
+                }
+            }
+        }
+
+        loadProducts();
+
+        return () => controller.abort();
+    }, []);
+
     return (
         <main className="products-page">
-
             <section className="products-page-header">
                 <p className="products-page-eyebrow">
                     HIMORA / COLLECTION
@@ -24,62 +103,108 @@ function Products() {
                 </p>
             </section>
 
-            <section className="products-page-grid">
+            {loading ? (
+                <section className="products-page-state" aria-live="polite">
+                    <p>Discovering the collection...</p>
+                </section>
+            ) : error ? (
+                <section className="products-page-state" role="alert">
+                    <p>{error}</p>
 
-                <Link
-                    to="/products/himora-horizon"
-                    className="products-page-card"
-                >
-                    <div className="products-page-image">
-                        <img
-                            src="https://images.unsplash.com/photo-1511499767150-a48a237f0083?auto=format&fit=crop&w=1400&q=85"
-                            alt="HIMORA Horizon"
-                        />
-                    </div>
+                    <button
+                        type="button"
+                        className="products-page-retry"
+                        onClick={() => window.location.reload()}
+                    >
+                        Try again →
+                    </button>
+                </section>
+            ) : products.length === 0 ? (
+                <section className="products-page-state products-page-empty">
+                    <span className="products-page-empty-label">
+                        THE COLLECTION
+                    </span>
 
-                    <div className="products-page-info">
-                        <div>
-                            <span>HIMORA / E-01</span>
-                            <h2>Horizon</h2>
-                        </div>
+                    <h2>Something considered is coming.</h2>
 
-                        <span>NPR 18,500</span>
-                    </div>
-                </Link>
+                    <p>
+                        Our next collection is being prepared.
+                        Please return soon to discover the pieces.
+                    </p>
 
-                <Link
-                    to="/products/himora-horizon"
-                    className="products-page-card"
-                >
-                    <div className="products-page-image">
-                        <img
-                            src="https://images.unsplash.com/photo-1577803645773-f96470509666?auto=format&fit=crop&w=1400&q=85"
-                            alt="HIMORA Altitude"
-                        />
-                    </div>
+                    <Link to="/collections">
+                        Explore the collections →
+                    </Link>
+                </section>
+            ) : (
+                <section className="products-page-grid">
+                    {products.map((product) => {
+                        const imageUrl = getProductImage(product);
 
-                    <div className="products-page-info">
-                        <div>
-                            <span>HIMORA / E-02</span>
-                            <h2>Altitude</h2>
-                        </div>
+                        return (
+                            <Link
+                                key={product.id}
+                                to={`/products/${product.slug || product.id}`}
+                                className="products-page-card"
+                            >
+                                <div className="products-page-image">
+                                    {imageUrl ? (
+                                        <img
+                                            src={imageUrl}
+                                            alt={
+                                                product.images?.find(
+                                                    (image) => image.is_primary
+                                                )?.alt_text || product.name
+                                            }
+                                            loading="lazy"
+                                        />
+                                    ) : (
+                                        <div className="products-page-placeholder">
+                                            HIMORA
+                                        </div>
+                                    )}
 
-                        <span>NPR 18,500</span>
-                    </div>
-                </Link>
+                                    <span className="products-page-view">
+                                        Discover piece →
+                                    </span>
+                                </div>
 
-            </section>
+                                <div className="products-page-info">
+                                    <div>
+                                        <span>
+                                            HIMORA /{" "}
+                                            {product.category?.name ||
+                                                "COLLECTION"}
+                                        </span>
 
-            <section className="products-page-footer">
-                <p>
-                    More HIMORA pieces are being prepared.
-                </p>
+                                        <h2>{product.name}</h2>
+                                    </div>
 
-                <Link to="/collections">
-                    Explore the collections →
-                </Link>
-            </section>
+                                    <span>
+                                        NPR{" "}
+                                        {Number(product.price).toLocaleString(
+                                            "en-NP"
+                                        )}
+                                    </span>
+                                </div>
+                            </Link>
+                        );
+                    })}
+                </section>
+            )}
 
+            {!loading && !error && products.length > 0 && (
+                <section className="products-page-footer">
+                    <p>
+                        You have discovered every available piece in
+                        this collection.
+                    </p>
+
+                    <Link to="/collections">
+                        Explore the collections →
+                    </Link>
+                </section>
+            )}
         </main>
     );
 }

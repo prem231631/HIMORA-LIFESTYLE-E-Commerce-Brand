@@ -1293,85 +1293,88 @@ def admin_update_order_status(
     db: Session = Depends(get_db),
     admin: User = Depends(require_admin),
 ):
-    order = db.scalar(
-        load_order_query()
-        .where(Order.id == order_id)
-    )
-
-    if not order:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Order not found.",
-        )
-
-    new_status = payload.status.strip().upper()
-
-    # FIX: Validate against all supported statuses,
-    # including CANCELLED.
-    allowed_statuses = {
-        "PENDING",
-        "CONFIRMED",
-        "PROCESSING",
-        "SHIPPED",
-        "OUT_FOR_DELIVERY",
-        "DELIVERED",
-        "CANCELLED",
-    }
-
-    if new_status not in allowed_statuses:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid order status: {new_status}.",
-        )
-
-    valid_transitions = {
-        "PENDING": {"CONFIRMED", "CANCELLED"},
-        "CONFIRMED": {"PROCESSING", "CANCELLED"},
-        "PROCESSING": {"SHIPPED", "CANCELLED"},
-        "SHIPPED": {"OUT_FOR_DELIVERY"},
-        "OUT_FOR_DELIVERY": {"DELIVERED"},
-    }
-
-    if new_status not in valid_transitions.get(order.status, set()):
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=(
-                f"Cannot change order status from "
-                f"{order.status} to {new_status}."
-            ),
-        )
-
     try:
-        if new_status == "CANCELLED":
-            for item in order.items:
-                inventory = db.scalar(
-                    select(Inventory)
-                    .where(
-                        Inventory.variant_id == item.variant_id
-                    )
-                    .with_for_update()
-                )
+        order = db.scalar(
+            load_order_query()
+            .where(Order.id == order_id)
+            .with_for_update()
+        )
 
-                if inventory:
-                    if inventory.reserved_quantity < item.quantity:
-                        raise HTTPException(
-                            status_code=status.HTTP_409_CONFLICT,
-                            detail=(
-                                "Insufficient reserved inventory "
-                                "to cancel this order."
-                            ),
-                        )
+        if order is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Order not found.",
+            )
 
-                    inventory.reserved_quantity -= item.quantity
+        new_status = payload.status.strip().upper()
 
-            if order.payment_method == "CASH_ON_DELIVERY":
-                order.payment_status = "PENDING"
+        allowed_statuses = {
+            "PENDING",
+            "CONFIRMED",
+            "PROCESSING",
+            "SHIPPED",
+            "OUT_FOR_DELIVERY",
+            "DELIVERED",
+            "CANCELLED",
+        }
 
-                if order.payment:
-                    order.payment.payment_status = "PENDING"
-                    order.payment.paid_at = None
+        if new_status not in allowed_statuses:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid order status: {new_status}.",
+            )
 
+        valid_transitions = {
+            "PENDING": {"CONFIRMED", "CANCELLED"},
+            "CONFIRMED": {"PROCESSING", "CANCELLED"},
+            "PROCESSING": {"SHIPPED", "CANCELLED"},
+            "SHIPPED": {"OUT_FOR_DELIVERY"},
+            "OUT_FOR_DELIVERY": {"DELIVERED"},
+        }
+
+        if new_status not in valid_transitions.get(order.status, set()):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=(
+                    f"Cannot change order status from "
+                    f"{order.status} to {new_status}."
+                ),
+            )
+
+        payment = order.payment
+
+        # Never allow delivery to bypass eSewa verification.
         if new_status == "DELIVERED":
+            if order.payment_method == "ESEWA":
+                if (
+                    order.payment_status != "PAID"
+                    or payment is None
+                    or payment.payment_status != "PAID"
+                ):
+                    raise HTTPException(
+                        status_code=status.HTTP_409_CONFLICT,
+                        detail=(
+                            "This eSewa order cannot be delivered "
+                            "until its payment has been verified."
+                        ),
+                    )
+
+            elif order.payment_method == "CASH_ON_DELIVERY":
+                # COD is collected at delivery, so mark it paid
+                # only when the admin records the order as delivered.
+                order.payment_status = "PAID"
+
+                if payment is not None:
+                    payment.payment_status = "PAID"
+                    payment.paid_at = datetime.now(timezone.utc)
+
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Unsupported payment method.",
+                )
+
+            # Update inventory only after payment rules pass.
             for item in order.items:
                 inventory = db.scalar(
                     select(Inventory)
@@ -1381,7 +1384,7 @@ def admin_update_order_status(
                     .with_for_update()
                 )
 
-                if not inventory:
+                if inventory is None:
                     raise HTTPException(
                         status_code=status.HTTP_409_CONFLICT,
                         detail=(
@@ -1396,50 +1399,101 @@ def admin_update_order_status(
                 ):
                     raise HTTPException(
                         status_code=status.HTTP_409_CONFLICT,
-                        detail="Insufficient inventory to complete delivery.",
+                        detail=(
+                            "Insufficient inventory to complete delivery."
+                        ),
                     )
 
                 inventory.stock_quantity -= item.quantity
                 inventory.reserved_quantity -= item.quantity
                 inventory.sold_quantity += item.quantity
 
-            order.payment_status = "PAID"
+        if new_status == "CANCELLED":
+            # Do not silently cancel a paid online order because
+            # that would require an explicit refund workflow.
+            if order.payment_status == "PAID":
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail=(
+                        "This order has already been paid. "
+                        "Use a refund workflow before cancelling it."
+                    ),
+                )
 
-            if order.payment:
-                order.payment.payment_status = "PAID"
-                order.payment.paid_at = datetime.now(timezone.utc)
+            for item in order.items:
+                inventory = db.scalar(
+                    select(Inventory)
+                    .where(
+                        Inventory.variant_id == item.variant_id
+                    )
+                    .with_for_update()
+                )
+
+                if inventory is None:
+                    raise HTTPException(
+                        status_code=status.HTTP_409_CONFLICT,
+                        detail=(
+                            "Inventory record is missing for "
+                            "an ordered variant."
+                        ),
+                    )
+
+                if inventory.reserved_quantity < item.quantity:
+                    raise HTTPException(
+                        status_code=status.HTTP_409_CONFLICT,
+                        detail=(
+                            "Insufficient reserved inventory "
+                            "to cancel this order."
+                        ),
+                    )
+
+                inventory.reserved_quantity -= item.quantity
+
+            if payment is not None:
+                payment.payment_status = "PENDING"
+                payment.paid_at = None
+
+            order.payment_status = "PENDING"
 
         order.status = new_status
+
+        history_note = (
+            payload.note.strip()
+            if payload.note and payload.note.strip()
+            else f"Order status changed to {new_status} by admin."
+        )
 
         db.add(
             OrderStatusHistory(
                 order_id=order.id,
                 status=new_status,
-                note=(
-                    payload.note.strip()
-                    if payload.note and payload.note.strip()
-                    else f"Order status changed to {new_status} by admin."
-                ),
+                note=history_note,
             )
         )
 
-        commit_or_rollback(db)
+        db.commit()
 
     except HTTPException:
         db.rollback()
         raise
 
-    except Exception:
+    except Exception as exc:
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Unable to update order status.",
-        )
+        ) from exc
 
     updated_order = db.scalar(
         load_order_query()
         .options(selectinload(Order.user))
         .where(Order.id == order_id)
     )
+
+    if updated_order is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to reload the updated order.",
+        )
 
     return serialize_admin_order(updated_order)

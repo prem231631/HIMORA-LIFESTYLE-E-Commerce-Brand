@@ -39,10 +39,7 @@ def send_password_reset_email(email: str, token: str) -> None:
     message["From"] = settings.smtp_from_email
     message["To"] = email
 
-    reset_url = (
-        f"{settings.frontend_url.rstrip('/')}"
-        f"/reset-password?token={token}"
-    )
+    reset_url = f"{settings.frontend_url.rstrip('/')}/reset-password/{token}"
 
     message.set_content(
         "We received a request to reset your HIMORA LIFESTYLE password.\n\n"

@@ -23,6 +23,9 @@ import Orders from "./pages/public/Orders";
 import OrderDetails from "./pages/public/OrderDetails";
 import Account from "./pages/public/Account";
 
+import EsewaSuccess from "./pages/public/EsewaSuccess";
+import EsewaFailure from "./pages/public/EsewaFailure";
+
 import Register from "./pages/auth/Register";
 import Login from "./pages/auth/Login";
 
@@ -127,6 +130,17 @@ function App() {
           }
         />
 
+        {/* ESewa PAYMENT CALLBACKS */}
+        <Route
+          path="/payment/esewa/success"
+          element={<EsewaSuccess />}
+        />
+
+        <Route
+          path="/payment/esewa/failure"
+          element={<EsewaFailure />}
+        />
+
         {/* AUTHENTICATION */}
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
@@ -190,10 +204,7 @@ function App() {
 
         {/* ADMIN ROUTES — ADMIN ROLE REQUIRED */}
         <Route element={<ProtectedRoute requireAdmin />}>
-          <Route
-            path="/admin"
-            element={<AdminDashboard />}
-          />
+          <Route path="/admin" element={<AdminDashboard />} />
 
           <Route
             path="/admin/dashboard"
@@ -238,7 +249,9 @@ function App() {
             <PublicLayout>
               <main className="himora-not-found">
                 <h1>Page not found</h1>
-                <p>The page you're looking for doesn't exist.</p>
+                <p>
+                  The page you're looking for doesn't exist.
+                </p>
               </main>
             </PublicLayout>
           }

@@ -1,139 +1,459 @@
+/* =========================================
+   PRODUCTS COLLECTION — HIMORA LIFESTYLE
+========================================= */
+
 .products-page {
-    background: #f7f5f0;
-    color: #111111;
     min-height: 100vh;
+    background: var(--color-ivory);
+    color: var(--color-obsidian);
 }
 
-/* HEADER */
+/* =========================================
+   COLLECTION HEADER
+========================================= */
 
 .products-page-header {
-    padding: 150px 7vw 100px;
-    border-bottom: 1px solid #d0cbc3;
+    padding: 155px 7vw 95px;
+    border-bottom: 1px solid var(--color-stone);
 }
 
 .products-page-eyebrow {
-    margin: 0 0 30px;
-    font-family: "Manrope", sans-serif;
+    margin: 0 0 32px;
+    font-family: var(--font-body);
     font-size: 10px;
-    letter-spacing: 0.18em;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    line-height: 1.8;
     text-transform: uppercase;
-    color: #777168;
+    color: var(--color-taupe);
 }
 
 .products-page-header h1 {
     margin: 0;
-    font-family: "Cormorant Garamond", serif;
-    font-size: clamp(70px, 11vw, 150px);
+    font-family: var(--font-display);
+    font-size: clamp(72px, 11vw, 150px);
     font-weight: 400;
-    line-height: 0.82;
-    letter-spacing: -0.045em;
+    line-height: 0.84;
+    letter-spacing: -0.055em;
+    color: var(--color-obsidian);
 }
 
 .products-page-header > p:last-child {
-    max-width: 500px;
-    margin: 45px 0 0;
-    font-family: "Manrope", sans-serif;
-    font-size: 14px;
-    line-height: 1.8;
+    max-width: 460px;
+    margin: 42px 0 0;
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 1.9;
     color: #625c54;
 }
 
-/* GRID */
+/* =========================================
+   PRODUCT GRID
+========================================= */
 
 .products-page-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 2px;
-    background: #d0cbc3;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1px;
+    background: var(--color-stone);
+    border-bottom: 1px solid var(--color-stone);
 }
 
 .products-page-card {
-    background: #f7f5f0;
-    color: #111111;
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    background: var(--color-ivory);
+    color: var(--color-obsidian);
     text-decoration: none;
 }
 
 .products-page-image {
-    aspect-ratio: 1 / 1.08;
+    position: relative;
+    aspect-ratio: 4 / 4.5;
     overflow: hidden;
-    background: #e5e1da;
+    background: var(--color-stone);
 }
 
 .products-page-image img {
+    display: block;
     width: 100%;
     height: 100%;
     object-fit: cover;
-    display: block;
-    transition: transform 0.7s ease;
+    transition: transform 700ms cubic-bezier(0.2, 0.65, 0.3, 1);
 }
 
 .products-page-card:hover .products-page-image img {
-    transform: scale(1.025);
+    transform: scale(1.035);
 }
+
+/* No image available */
+
+.products-page-placeholder {
+    width: 100%;
+    height: 100%;
+    min-height: 240px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: var(--color-stone);
+    color: var(--color-taupe);
+    font-family: var(--font-display);
+    font-size: clamp(32px, 5vw, 56px);
+    letter-spacing: 0.12em;
+}
+
+/* Discover link overlay */
+
+.products-page-view {
+    position: absolute;
+    right: 22px;
+    bottom: 22px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+
+    padding: 12px 16px;
+    background: var(--color-ivory);
+    color: var(--color-obsidian);
+
+    font-family: var(--font-body);
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+
+    opacity: 0;
+    transform: translateY(6px);
+    transition:
+        opacity 250ms ease,
+        transform 250ms ease;
+}
+
+.products-page-card:hover .products-page-view,
+.products-page-card:focus-visible .products-page-view {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Product name and price */
 
 .products-page-info {
     display: flex;
-    justify-content: space-between;
     align-items: flex-start;
-    padding: 24px 28px 40px;
-    font-family: "Manrope", sans-serif;
+    justify-content: space-between;
+    gap: 20px;
+
+    padding: 26px 28px 38px;
+    font-family: var(--font-body);
+}
+
+.products-page-info > div {
+    min-width: 0;
 }
 
 .products-page-info span {
-    font-size: 10px;
-    letter-spacing: 0.12em;
+    display: block;
+    font-size: 9px;
+    font-weight: 500;
+    line-height: 1.7;
+    letter-spacing: 0.13em;
     text-transform: uppercase;
-    color: #777168;
+    color: var(--color-taupe);
 }
 
 .products-page-info h2 {
-    margin: 7px 0 0;
-    font-family: "Cormorant Garamond", serif;
-    font-size: 34px;
+    margin: 9px 0 0;
+    font-family: var(--font-display);
+    font-size: clamp(28px, 3vw, 40px);
     font-weight: 400;
+    line-height: 1.1;
+    letter-spacing: -0.025em;
+    overflow-wrap: anywhere;
+    color: var(--color-obsidian);
 }
 
-/* FOOTER */
+.products-page-info > span {
+    flex-shrink: 0;
+    padding-top: 1px;
+    color: var(--color-obsidian);
+    font-size: 10px;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+}
+
+/* Keyboard accessibility */
+
+.products-page-card:focus-visible {
+    outline: 2px solid var(--color-obsidian);
+    outline-offset: -4px;
+}
+
+/* =========================================
+   LOADING, ERROR & EMPTY STATES
+========================================= */
+
+.products-page-state {
+    min-height: 320px;
+    padding: 80px 24px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+
+    text-align: center;
+    background: var(--color-ivory);
+}
+
+.products-page-state > p {
+    max-width: 460px;
+    margin: 0;
+    font-family: var(--font-body);
+    font-size: 13px;
+    line-height: 1.9;
+    color: #625c54;
+}
+
+.products-page-retry {
+    padding: 10px 0;
+    border: 0;
+    border-bottom: 1px solid var(--color-obsidian);
+    background: transparent;
+    color: var(--color-obsidian);
+    font-family: var(--font-body);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    cursor: pointer;
+}
+
+.products-page-retry:hover {
+    opacity: 0.65;
+}
+
+/* Coming Soon */
+
+.products-page-empty {
+    min-height: 420px;
+    padding: 100px 24px;
+    border-bottom: 1px solid var(--color-stone);
+}
+
+.products-page-empty-label {
+    font-family: var(--font-body);
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--color-taupe);
+}
+
+.products-page-empty h2 {
+    max-width: 700px;
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(36px, 6vw, 68px);
+    font-weight: 400;
+    line-height: 1.08;
+    letter-spacing: -0.035em;
+    color: var(--color-obsidian);
+}
+
+.products-page-empty > p {
+    max-width: 440px;
+    margin: 0;
+    font-family: var(--font-body);
+    font-size: 12px;
+    line-height: 1.9;
+    color: #625c54;
+}
+
+.products-page-empty > a {
+    display: inline-block;
+    margin-top: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--color-obsidian);
+
+    color: var(--color-obsidian);
+    font-family: var(--font-body);
+    font-size: 10px;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    text-decoration: none;
+
+    transition: opacity var(--transition-fast);
+}
+
+.products-page-empty > a:hover {
+    opacity: 0.6;
+}
+
+/* =========================================
+   COLLECTION FOOTER
+========================================= */
 
 .products-page-footer {
-    padding: 100px 7vw 120px;
+    padding: 100px 7vw 115px;
     text-align: center;
+    background: var(--color-ivory);
 }
 
 .products-page-footer p {
-    margin: 0 0 25px;
-    font-family: "Manrope", sans-serif;
-    font-size: 13px;
-    color: #777168;
+    margin: 0 0 26px;
+    font-family: var(--font-body);
+    font-size: 12px;
+    line-height: 1.8;
+    color: var(--color-taupe);
 }
 
 .products-page-footer a {
-    color: #111111;
-    font-family: "Manrope", sans-serif;
-    font-size: 11px;
-    letter-spacing: 0.12em;
+    display: inline-block;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--color-obsidian);
+
+    color: var(--color-obsidian);
+    font-family: var(--font-body);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.13em;
     text-transform: uppercase;
     text-decoration: none;
-    border-bottom: 1px solid #111111;
-    padding-bottom: 7px;
+
+    transition:
+        color var(--transition-fast),
+        border-color var(--transition-fast),
+        opacity var(--transition-fast);
 }
 
-/* RESPONSIVE */
+.products-page-footer a:hover {
+    opacity: 0.6;
+}
 
-@media (max-width: 700px) {
+/* =========================================
+   TABLET
+========================================= */
+
+@media (max-width: 900px) {
     .products-page-header {
-        padding: 110px 6vw 75px;
-    }
-
-    .products-page-grid {
-        grid-template-columns: 1fr;
+        padding: 130px 6vw 78px;
     }
 
     .products-page-info {
-        padding: 20px 20px 30px;
+        padding: 22px 20px 32px;
+    }
+
+    .products-page-info h2 {
+        font-size: clamp(26px, 4vw, 34px);
+    }
+
+    .products-page-view {
+        right: 16px;
+        bottom: 16px;
     }
 
     .products-page-footer {
-        padding: 80px 6vw 100px;
+        padding: 80px 6vw 95px;
+    }
+}
+
+/* =========================================
+   MOBILE
+========================================= */
+
+@media (max-width: 600px) {
+    .products-page-header {
+        padding: 108px 6vw 64px;
+    }
+
+    .products-page-eyebrow {
+        margin-bottom: 25px;
+        font-size: 9px;
+    }
+
+    .products-page-header h1 {
+        font-size: clamp(68px, 16vw, 100px);
+    }
+
+    .products-page-header > p:last-child {
+        margin-top: 30px;
+        font-size: 12px;
+    }
+
+    .products-page-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .products-page-image {
+        aspect-ratio: 4 / 4.6;
+    }
+
+    .products-page-info {
+        padding: 20px 18px 30px;
+        gap: 14px;
+    }
+
+    .products-page-info h2 {
+        font-size: 32px;
+    }
+
+    .products-page-info span {
+        font-size: 9px;
+    }
+
+    .products-page-view {
+        opacity: 1;
+        transform: none;
+        padding: 10px 12px;
+        font-size: 8px;
+    }
+
+    .products-page-state {
+        min-height: 280px;
+        padding: 65px 22px;
+    }
+
+    .products-page-empty {
+        min-height: 360px;
+        padding: 80px 22px;
+    }
+
+    .products-page-empty h2 {
+        font-size: clamp(36px, 10vw, 52px);
+    }
+
+    .products-page-footer {
+        padding: 70px 6vw 85px;
+    }
+}
+
+/* Small Phones */
+
+@media (max-width: 360px) {
+    .products-page-info {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .products-page-info > span {
+        padding-top: 0;
+    }
+}
+
+/* Reduced Motion */
+
+@media (prefers-reduced-motion: reduce) {
+    .products-page-image img,
+    .products-page-view,
+    .products-page-footer a,
+    .products-page-empty > a {
+        transition: none;
+    }
+
+    .products-page-card:hover .products-page-image img {
+        transform: none;
     }
 }

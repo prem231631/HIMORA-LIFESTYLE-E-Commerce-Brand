@@ -1,12 +1,16 @@
 from datetime import datetime
 from decimal import Decimal
-
+from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 
 class CheckoutRequest(BaseModel):
     address_id: int = Field(gt=0)
     notes: str | None = Field(default=None, max_length=1000)
+    payment_method: Literal[
+        "CASH_ON_DELIVERY",
+        "ESEWA",
+    ] = "CASH_ON_DELIVERY"
 
 
 class OrderItemResponse(BaseModel):

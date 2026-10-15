@@ -153,8 +153,7 @@ async def verify_esewa_payment(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        # First find the payment without locking it. Lock the order
-        # before locking the payment to keep lock ordering consistent.
+        # 1. Read payment and order WITHOUT acquiring row locks.
         payment_reference = db.scalar(
             select(Payment).where(
                 Payment.transaction_uuid == payload.transaction_uuid
@@ -168,12 +167,10 @@ async def verify_esewa_payment(
             )
 
         order = db.scalar(
-            select(Order)
-            .where(
+            select(Order).where(
                 Order.id == payment_reference.order_id,
                 Order.user_id == current_user.id,
             )
-            .with_for_update()
         )
 
         if order is None:
@@ -182,35 +179,20 @@ async def verify_esewa_payment(
                 detail="Order not found.",
             )
 
-        payment = db.scalar(
-            select(Payment)
-            .where(
-                Payment.id == payment_reference.id,
-                Payment.transaction_uuid == payload.transaction_uuid,
-            )
-            .with_for_update()
-        )
-
-        if payment is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Payment transaction not found.",
-            )
-
         if order.payment_method != "ESEWA":
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="This order does not use eSewa.",
             )
 
-        if payment.payment_method != "ESEWA":
+        if payment_reference.payment_method != "ESEWA":
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Payment method mismatch.",
             )
 
         if order.payment_status == "PAID":
-            if payment.payment_status != "PAID":
+            if payment_reference.payment_status != "PAID":
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
                     detail="Order and payment statuses are inconsistent.",
@@ -223,7 +205,7 @@ async def verify_esewa_payment(
                 "payment_status": "PAID",
             }
 
-        if payment.payment_status == "PAID":
+        if payment_reference.payment_status == "PAID":
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="Order and payment statuses are inconsistent.",
@@ -235,21 +217,15 @@ async def verify_esewa_payment(
                 detail="This order is no longer awaiting payment.",
             )
 
-        # Never mark an order paid from callback data alone.
-        # Ask eSewa's transaction-status endpoint to verify it.
-        try:
-            result = await verify_esewa_transaction(
-                transaction_uuid=payload.transaction_uuid,
-                expected_amount=order.total_amount,
-            )
-        except Exception as exc:
-            raise HTTPException(
-                status_code=status.HTTP_502_BAD_GATEWAY,
-                detail=(
-                    "Could not verify the payment with eSewa. "
-                    "Please try again later."
-                ),
-            ) from exc
+        # Remember the amount used for the external verification.
+        expected_amount = normalize_amount(order.total_amount)
+
+        # 2. Contact eSewa BEFORE acquiring database row locks.
+        # The HTTP client must have a finite timeout.
+        result = await verify_esewa_transaction(
+            transaction_uuid=payload.transaction_uuid,
+            expected_amount=expected_amount,
+        )
 
         if str(result.get("status", "")).upper() != "COMPLETE":
             raise HTTPException(
@@ -278,9 +254,8 @@ async def verify_esewa_payment(
             )
 
         try:
-            expected_amount = normalize_amount(order.total_amount)
             actual_amount = normalize_amount(returned_amount)
-        except ValueError as exc:
+        except (ValueError, TypeError, ArithmeticError) as exc:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="The payment amount could not be verified.",
@@ -289,7 +264,7 @@ async def verify_esewa_payment(
         if actual_amount != expected_amount:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="The verified transaction amount does not match the order.",
+                detail="The verified transaction amount does not match.",
             )
 
         returned_product_code = (
@@ -305,24 +280,114 @@ async def verify_esewa_payment(
                 detail="The verified product code does not match.",
             )
 
+        # 3. eSewa confirmed payment. Now acquire locks and recheck
+        # everything before changing the database.
+        locked_order = db.scalar(
+            select(Order)
+            .where(
+                Order.id == payment_reference.order_id,
+                Order.user_id == current_user.id,
+            )
+            .with_for_update()
+        )
+
+        if locked_order is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Order not found.",
+            )
+
+        locked_payment = db.scalar(
+            select(Payment)
+            .where(
+                Payment.id == payment_reference.id,
+                Payment.transaction_uuid == payload.transaction_uuid,
+            )
+            .with_for_update()
+        )
+
+        if locked_payment is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Payment transaction not found.",
+            )
+
+        # Another verification request may have completed while we
+        # were waiting for eSewa. Handle that safely.
+        if locked_order.payment_status == "PAID":
+            if locked_payment.payment_status != "PAID":
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Order and payment statuses are inconsistent.",
+                )
+
+            return {
+                "message": "Payment already verified.",
+                "order_id": locked_order.id,
+                "order_number": locked_order.order_number,
+                "payment_status": "PAID",
+            }
+
+        if locked_payment.payment_status == "PAID":
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Order and payment statuses are inconsistent.",
+            )
+
+        if locked_order.status != "PENDING":
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="This order is no longer awaiting payment.",
+            )
+
+        if locked_order.payment_method != "ESEWA":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="This order does not use eSewa.",
+            )
+
+        if normalize_amount(locked_order.total_amount) != actual_amount:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="The order amount changed during verification.",
+            )
+
         now = datetime.now(timezone.utc)
 
-        payment.payment_status = "PAID"
-        payment.paid_at = now
-        order.payment_status = "PAID"
+        locked_payment.payment_status = "PAID"
+        locked_payment.paid_at = now
+        locked_order.payment_status = "PAID"
 
         db.commit()
 
         return {
             "message": "Payment verified successfully.",
-            "order_id": order.id,
-            "order_number": order.order_number,
+            "order_id": locked_order.id,
+            "order_number": locked_order.order_number,
             "payment_status": "PAID",
         }
 
     except HTTPException:
         db.rollback()
         raise
+
+    except httpx.TimeoutException as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+            detail=(
+                "eSewa verification timed out. "
+                "Payment status has not been confirmed. "
+                "Check your order before retrying."
+            ),
+        ) from exc
+
+    except httpx.HTTPError as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Unable to communicate with eSewa. Please try again later.",
+        ) from exc
 
     except Exception as exc:
         db.rollback()

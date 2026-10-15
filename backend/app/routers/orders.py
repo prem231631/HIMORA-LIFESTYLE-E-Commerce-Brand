@@ -18,6 +18,7 @@ from app.models import (
     OrderStatusHistory,
     Payment,
     User,
+    ProductVariant,
 )
 from app.schemas import (
     AdminOrderResponse,
@@ -119,7 +120,7 @@ def checkout(
         .options(
             selectinload(Cart.items)
             .selectinload(CartItem.variant)
-            .selectinload("product")
+            .selectinload(ProductVariant.product)
         )
         .where(Cart.user_id == current_user.id)
     )
@@ -716,3 +717,6 @@ def update_order_status(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Unable to update order status.",
         ) from exc
+
+
+

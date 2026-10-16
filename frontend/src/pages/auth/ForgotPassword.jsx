@@ -5,7 +5,7 @@ import { ArrowLeft, CheckCircle2, LoaderCircle, Mail } from "lucide-react";
 import "./forgotPassword.css";
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+  import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? "http://localhost:8000" : "");
 
 function ForgotPassword() {
   const [email, setEmail] = useState("");
